@@ -1,0 +1,6 @@
+{
+  "root": "/etc/goi",
+  "logs": {
+    "mode": "INFO"
+  }
+}
