@@ -9,6 +9,47 @@ import (
 	"github.com/hop-/golog"
 )
 
+func getTlsOpts() (string, string, error) {
+	certFile, err := goconfig.Get[string]("tls.certFile")
+	if err != nil {
+		return "", "", err
+	}
+	keyFile, err := goconfig.Get[string]("tls.keyFile")
+	if err != nil {
+		return "", "", err
+	}
+
+	return *certFile, *keyFile, nil
+}
+
+func getQuicOpts() (bool, int, error) {
+	enabled, err := goconfig.Get[bool]("quic.enabled")
+	if err != nil {
+		return false, -1, err
+	}
+
+	port, err := goconfig.Get[int]("quic.port")
+	if err != nil {
+		return false, -1, err
+	}
+
+	return *enabled, *port, nil
+}
+
+func getTcpOtps() (bool, int, error) {
+	enabled, err := goconfig.Get[bool]("tcp.enabled")
+	if err != nil {
+		return false, -1, err
+	}
+
+	port, err := goconfig.Get[int]("tcp.port")
+	if err != nil {
+		return false, -1, err
+	}
+
+	return *enabled, *port, nil
+}
+
 func main() {
 	// Load config
 	if err := goconfig.Load(); err != nil {
@@ -25,11 +66,37 @@ func main() {
 	// Init Logging
 	golog.Init(*logMode)
 
-	opts := []app.OptionModifier{
-		// TODO: add
+	certFile, keyFile, err := getTlsOpts()
+	if err != nil {
+		golog.Fatalf("Failed to get TLS configuration %s", err.Error())
+	}
+	quicEnabled, quicPort, err := getQuicOpts()
+	if err != nil {
+		golog.Fatalf("Failed to get QUIC configuration %s", err.Error())
+	}
+	tcpEnabled, tcpPort, err := getTcpOtps()
+	if err != nil {
+		golog.Fatalf("Failed to get TCP configuration %s", err.Error())
 	}
 
-	app := app.New(opts...)
+	opts := []app.OptionModifier{app.WithTls(certFile, keyFile)}
+
+	if !quicEnabled && !tcpEnabled {
+		golog.Fatalf("At least one of the services should be enabled")
+	}
+
+	if quicEnabled {
+		opts = append(opts, app.WithQuic(quicPort))
+	}
+
+	if tcpEnabled {
+		opts = append(opts, app.WithTcp(tcpPort))
+	}
+	app, err := app.New(opts...)
+
+	if err != nil {
+		golog.Fatal("Failed to initialize app", err.Error())
+	}
 
 	// Run app
 	app.Start()

@@ -1,3 +1,18 @@
 {
-  "root": "GOI_ROOT"
+  "root": "GOI_ROOT",
+  "logs": {
+    "mode": "GOI_LOG_LEVEL"
+  },
+  "quic": {
+    "enabled": "GOI_QUIC",
+    "port": "GOI_QUIC_PORT"
+  },
+  "tcp": {
+    "enabled": "GOI_TCP",
+    "port": "GOI_TCP_PORT"
+  },
+  "tls": {
+    "certFile": "GOI_CERT_FILE",
+    "keyFile": "GOI_KEY_FILE"
+  }
 }

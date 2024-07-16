@@ -5,32 +5,58 @@ import (
 	"os/signal"
 	"sync"
 	"syscall"
+
+	"github.com/hop-/goi/internal/services"
+	"github.com/hop-/golog"
 )
 
 type App struct {
 	exitChan  chan os.Signal
 	mu        *sync.Mutex
 	isRunning bool
-	// TODO
+	services  []services.Service
+	wg        *sync.WaitGroup
 }
 
-func newApp(opts Options) *App {
-	// TODO: remove tmp line
-	_ = opts
+func newApp(opts Options) (*App, error) {
+	srvs := []services.Service{}
+
+	certFile := opts.tls.certFile
+	keyFile := opts.tls.keyFile
+
+	if opts.quic != nil {
+		s, err := services.NewQuicService(opts.quic.Port, certFile, keyFile)
+		if err != nil {
+			return nil, err
+		}
+
+		srvs = append(srvs, s)
+	}
+
+	if opts.tcp != nil {
+		s, err := services.NewTcpService(opts.quic.Port, certFile, keyFile)
+		if err != nil {
+			return nil, err
+		}
+
+		srvs = append(srvs, s)
+	}
 
 	app := App{
 		make(chan os.Signal, 1),
 		&sync.Mutex{},
 		false,
+		srvs,
+		&sync.WaitGroup{},
 	}
 
 	// Signal handling
 	signal.Notify(app.exitChan, os.Interrupt, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT)
 
-	return &app
+	return &app, nil
 }
 
-func New(optionModifiers ...OptionModifier) *App {
+func New(optionModifiers ...OptionModifier) (*App, error) {
 	o := defaultOptions()
 	for _, omd := range optionModifiers {
 		omd(&o)
@@ -41,12 +67,23 @@ func New(optionModifiers ...OptionModifier) *App {
 
 func (a *App) Start() {
 	a.isRunning = true
-	// Graceful shutdown
-	go a.gracefulShutDownTracker()
+	// Graceful shutdown handler
+	go a.gracefulShutDownHandler()
 
-	// TODO: run
+	for _, s := range a.services {
+		a.wg.Add(1)
+		go func() {
+			defer a.wg.Done()
+			err := s.Start()
+			if err != nil {
+				golog.Error("Failed to start service", err.Error())
+			}
+		}()
+	}
 
-	a.Stop()
+	// Wait until all goroutines are done
+	a.wg.Wait()
+	a.isRunning = false
 }
 
 func (a *App) Stop() {
@@ -58,10 +95,14 @@ func (a *App) Stop() {
 	}
 
 	a.isRunning = false
-	// TODO: stop
+
+	// Iterate and stop all services
+	for _, s := range a.services {
+		s.Stop()
+	}
 }
 
-func (a *App) gracefulShutDownTracker() {
+func (a *App) gracefulShutDownHandler() {
 	<-a.exitChan
 
 	a.Stop()

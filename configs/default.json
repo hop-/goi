@@ -2,5 +2,17 @@
   "root": "/etc/goi",
   "logs": {
     "mode": "INFO"
+  },
+  "quic": {
+    "enabled": true,
+    "port": 4554
+  },
+  "tcp": {
+    "enabled": true,
+    "port": 4553
+  },
+  "tls": {
+    "certFile": "cert.crt",
+    "keyFile": "cert.key"
   }
 }
