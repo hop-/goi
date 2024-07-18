@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net"
 
+	"github.com/hop-/goi/internal/handlers"
 	"github.com/hop-/golog"
 )
 
@@ -38,23 +39,33 @@ func (s *TcpService) Start() error {
 	addr := fmt.Sprintf(":%d", s.port)
 	var err error
 	if s.tlsConf == nil {
+		golog.Info("Starting TCP service")
 		s.listener, err = net.Listen("tcp", addr)
 	} else {
+		golog.Info("Starting TCP+TLS service")
 		s.listener, err = tls.Listen("tcp", addr, s.tlsConf)
 	}
 	if err != nil {
 		return err
 	}
+	golog.Info("Listening TCP on", s.port)
 
 	s.isRunning = true
 	for s.isRunning {
 		c, err := s.listener.Accept()
 		if err != nil {
 			golog.Error("Failed to accept TCP connection", err.Error())
+			continue
 		}
+		golog.Info("New TCP connection accepted", c.RemoteAddr())
 
-		// TODO
-		_ = c
+		// Each connection is handeled in separate goroutine
+		go func() {
+			// net.Conn implements network.SimpleConnection interface
+			// no need for convertion
+
+			handlers.ConnectionHandler(c)
+		}()
 	}
 
 	return nil

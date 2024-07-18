@@ -5,6 +5,7 @@ import (
 	"crypto/tls"
 	"net"
 
+	"github.com/hop-/goi/internal/handlers"
 	"github.com/hop-/golog"
 	quic "github.com/quic-go/quic-go"
 )
@@ -34,7 +35,7 @@ func NewQuicService(port int, certFile string, keyFile string) (*QuicService, er
 		port:     port,
 		tlsConf:  tlsConf,
 		quicConf: &quic.Config{
-			// TODO
+			// TODO: defaults
 		},
 	}, nil
 }
@@ -51,20 +52,33 @@ func (s *QuicService) Start() error {
 	}
 	defer tr.Close()
 
+	golog.Info("Starting QUIC service")
 	s.listener, err = tr.Listen(s.tlsConf, s.quicConf)
 	if err != nil {
 		return err
 	}
+	golog.Info("Listening QUIC on", s.port)
 
 	s.isRunning = true
 	for s.isRunning {
 		c, err := s.listener.Accept(context.Background())
 		if err != nil {
 			golog.Error("Failed to accept QUIC connection", err.Error())
+			continue
 		}
+		golog.Info("New QUIC connection accepted", c.RemoteAddr())
 
-		// TODO
-		_ = c
+		// Each connection is handeled in separate goroutine
+		go func() {
+			s, err := c.AcceptStream(context.Background())
+			if err != nil {
+				golog.Error("Failed to create Stream", err.Error())
+				return
+			}
+
+			// quic.Stream implements network.SimpleConnection interface
+			handlers.ConnectionHandler(s)
+		}()
 	}
 
 	return nil

@@ -9,7 +9,7 @@
   },
   "tcp": {
     "enabled": true,
-    "port": 4553
+    "port": 4554
   },
   "tls": {
     "certFile": "cert.crt",

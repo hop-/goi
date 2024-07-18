@@ -34,7 +34,7 @@ func newApp(opts Options) (*App, error) {
 	}
 
 	if opts.tcp != nil {
-		s, err := services.NewTcpService(opts.quic.Port, certFile, keyFile)
+		s, err := services.NewTcpService(opts.tcp.Port, certFile, keyFile)
 		if err != nil {
 			return nil, err
 		}
