@@ -77,7 +77,10 @@ func (s *QuicService) Start() error {
 			}
 
 			// quic.Stream implements network.SimpleConnection interface
-			handlers.ConnectionHandler(s)
+			err = handlers.ConnectionHandler(s)
+			if err != nil {
+				golog.Error("Failed to handle the connection", err.Error())
+			}
 		}()
 	}
 

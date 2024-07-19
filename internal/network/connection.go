@@ -20,38 +20,12 @@ func (c *Connection) Write(b []byte) (int, error) {
 	return c.conn.Write(b)
 }
 
-func (c *Connection) ReadMessage() ([]byte, error) {
-	// Read the message size
-	var messageSize int64
-	binary.Read(c, binary.LittleEndian, &messageSize)
-
-	m := make([]byte, messageSize)
+func (c *Connection) ReadAll(b []byte) error {
 	offset := 0
 
 	// Read whole message
-	for int64(offset) < messageSize {
-		size, err := c.conn.Read(m[offset:])
-		if err != nil {
-			return nil, err
-		}
-
-		offset += size
-		// TODO: check size == 0 case
-	}
-
-	return m, nil
-}
-
-func (c *Connection) WriteMessage(m []byte) error {
-	// Write the message size
-	messageSize := len(m)
-	binary.Write(c, binary.LittleEndian, int64(messageSize))
-
-	offset := 0
-
-	// Write whole message
-	for offset < messageSize {
-		size, err := c.conn.Write(m[offset:])
+	for offset < len(b) {
+		size, err := c.conn.Read(b[offset:])
 		if err != nil {
 			return err
 		}
@@ -61,4 +35,43 @@ func (c *Connection) WriteMessage(m []byte) error {
 	}
 
 	return nil
+}
+
+func (c *Connection) WriteAll(b []byte) error {
+	offset := 0
+
+	// Write whole message
+	for offset < len(b) {
+		size, err := c.conn.Write(b[offset:])
+		if err != nil {
+			return err
+		}
+
+		offset += size
+		// TODO: check size == 0 case
+	}
+
+	return nil
+}
+
+func (c *Connection) ReadMessage() ([]byte, error) {
+	// Read the message size
+	var messageSize int64
+	binary.Read(c, binary.LittleEndian, &messageSize)
+
+	m := make([]byte, messageSize)
+
+	// Write whole message
+	err := c.ReadAll(m)
+
+	return m, err
+}
+
+func (c *Connection) WriteMessage(m []byte) error {
+	// Write the message size
+	messageSize := len(m)
+	binary.Write(c, binary.LittleEndian, int64(messageSize))
+
+	// Write whole message
+	return c.WriteAll(m)
 }
