@@ -50,6 +50,20 @@ func getTcpOtps() (bool, int, error) {
 	return *enabled, *port, nil
 }
 
+func getStorageOptions() (string, string, error) {
+	storageType, err := goconfig.Get[string]("storage.type")
+	if err != nil {
+		return "", "", err
+	}
+
+	uri, err := goconfig.Get[string]("storage.uri")
+	if err != nil {
+		return "", "", err
+	}
+
+	return *storageType, *uri, nil
+}
+
 func main() {
 	// Load config
 	if err := goconfig.Load(); err != nil {
@@ -78,8 +92,15 @@ func main() {
 	if err != nil {
 		golog.Fatalf("Failed to get TCP configuration %s", err.Error())
 	}
+	storageType, storageUri, err := getStorageOptions()
+	if err != nil {
+		golog.Fatalf("Failed to get storage configuration %s", err.Error())
+	}
 
-	opts := []app.OptionModifier{app.WithTls(certFile, keyFile)}
+	opts := []app.OptionModifier{
+		app.WithTls(certFile, keyFile),
+		app.WithStorage(storageType, storageUri),
+	}
 
 	if !quicEnabled && !tcpEnabled {
 		golog.Fatalf("At least one of the services should be enabled")

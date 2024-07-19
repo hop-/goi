@@ -14,5 +14,9 @@
   "tls": {
     "certFile": "cert.crt",
     "keyFile": "cert.key"
+  },
+  "storage": {
+    "type": "sqlite",
+    "uri": "data.db"
   }
 }

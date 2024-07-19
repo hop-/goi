@@ -19,6 +19,8 @@ github.com/hop-/goconfig v1.1.1/go.mod h1:TfKTQ4yIKU11w51YIH6e8UcjOGsYVKPAtd5gn6
 github.com/hop-/golog v1.1.0 h1:JMcn/VoA7d2Vh44Z+hnGSvMG7mVdJiA/tRo4/wkjq3U=
 github.com/hop-/golog v1.1.0/go.mod h1:8yAxFbyFX1UCpxyXv7JnZ2aMCks2Ys5k68iTeT7EI04=
 github.com/ianlancetaylor/demangle v0.0.0-20200824232613-28f6c0f3b639/go.mod h1:aSSvb/t6k1mPoxDqO4vJh6VOCGPwU4O0C2/Eqndh1Sc=
+github.com/mattn/go-sqlite3 v1.14.22 h1:2gZY6PC6kBnID23Tichd1K+Z0oS6nE/XwU+Vz/5o4kU=
+github.com/mattn/go-sqlite3 v1.14.22/go.mod h1:Uh1q+B4BYcTPb+yiD3kU8Ct7aC0hY9fxUwlHK0RXw+Y=
 github.com/onsi/ginkgo/v2 v2.9.5 h1:+6Hr4uxzP4XIUyAkg61dWBw8lb/gc4/X5luuxN/EC+Q=
 github.com/onsi/ginkgo/v2 v2.9.5/go.mod h1:tvAoo1QUJwNEU2ITftXTpR7R1RbCzoZUOs3RonqW57k=
 github.com/onsi/gomega v1.27.6 h1:ENqfyGeS5AX/rlXDd/ETokDz93u0YufY1Pgxuy/PvWE=

@@ -7,15 +7,18 @@ import (
 	"syscall"
 
 	"github.com/hop-/goi/internal/services"
+	"github.com/hop-/goi/internal/storages"
 	"github.com/hop-/golog"
 )
 
 type App struct {
-	exitChan  chan os.Signal
-	mu        *sync.Mutex
-	isRunning bool
-	services  []services.Service
-	wg        *sync.WaitGroup
+	exitChan    chan os.Signal
+	mu          *sync.Mutex
+	isRunning   bool
+	services    []services.Service
+	storageType string
+	storageUri  string
+	wg          *sync.WaitGroup
 }
 
 func newApp(opts Options) (*App, error) {
@@ -47,6 +50,8 @@ func newApp(opts Options) (*App, error) {
 		&sync.Mutex{},
 		false,
 		srvs,
+		opts.storage.storageType,
+		opts.storage.uri,
 		&sync.WaitGroup{},
 	}
 
@@ -69,6 +74,13 @@ func (a *App) Start() {
 	a.isRunning = true
 	// Graceful shutdown handler
 	go a.gracefulShutDownHandler()
+
+	// Init storage
+	err := storages.InitStorage(a.storageType, a.storageUri)
+	if err != nil {
+		golog.Fatal("Failed to initialize the storage", err.Error())
+	}
+	defer storages.GetStorage().Close()
 
 	for _, s := range a.services {
 		a.wg.Add(1)

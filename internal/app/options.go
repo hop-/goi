@@ -9,14 +9,22 @@ type ConnOptions struct {
 	Port int
 }
 
+type StorageOptions struct {
+	storageType string
+	uri         string
+}
+
 type Options struct {
-	tls  TlsOptions
-	tcp  *ConnOptions
-	quic *ConnOptions
+	tls     TlsOptions
+	tcp     *ConnOptions
+	quic    *ConnOptions
+	storage StorageOptions
 }
 
 func defaultOptions() Options {
-	return Options{}
+	return Options{
+		// TODO
+	}
 }
 
 type OptionModifier func(*Options)
@@ -43,6 +51,15 @@ func WithQuic(port int) OptionModifier {
 	return func(o *Options) {
 		o.quic = &ConnOptions{
 			Port: port,
+		}
+	}
+}
+
+func WithStorage(storageType string, storageUri string) OptionModifier {
+	return func(o *Options) {
+		o.storage = StorageOptions{
+			storageType: storageType,
+			uri:         storageUri,
 		}
 	}
 }
