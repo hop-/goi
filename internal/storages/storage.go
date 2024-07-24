@@ -3,9 +3,18 @@ package storages
 import (
 	"fmt"
 	"sync"
+
+	"github.com/hop-/goi/internal/core"
 )
 
 type Storage interface {
+	init() error
+	Topics() []core.Topic
+	NewTopic(core.Topic) error
+	ConsumerGroups() []core.ConsumerGroup
+	NewConsumerGroup(core.ConsumerGroup) error
+	Messages(core.Topic) []core.Message
+	NewMessage(core.Message) error
 	Close()
 	// TODO: add methods
 }
@@ -40,8 +49,11 @@ func InitStorage(storageType string, uri string) error {
 
 			var err error
 			storageInstance, err = generator(uri)
+			if err != nil {
+				return err
+			}
 
-			return err
+			return storageInstance.init()
 		}
 	}
 
