@@ -112,7 +112,7 @@ func createMessagesTable(s *SqliteStorage) error {
 	return err
 }
 
-func (s *SqliteStorage) init() error {
+func (s *SqliteStorage) Init() error {
 	golog.Debug("Setup sqlite storage")
 	err := sqliteChecksAndSetup(s)
 	if err != nil {
@@ -141,13 +141,13 @@ func (s *SqliteStorage) init() error {
 	return createMessagesTable(s)
 }
 
-func (s *SqliteStorage) Close() {
-	s.db.Close()
+func (s *SqliteStorage) Close() error {
+	return s.db.Close()
 }
 
-func (s *SqliteStorage) Topics() []core.Topic {
+func (s *SqliteStorage) Topics() ([]core.Topic, error) {
 	// TODO
-	return []core.Topic{}
+	return []core.Topic{}, nil
 }
 
 func (s *SqliteStorage) NewTopic(core.Topic) error {
@@ -155,9 +155,9 @@ func (s *SqliteStorage) NewTopic(core.Topic) error {
 	return nil
 }
 
-func (s *SqliteStorage) ConsumerGroups() []core.ConsumerGroup {
+func (s *SqliteStorage) ConsumerGroups() ([]core.ConsumerGroup, error) {
 	// TODO
-	return []core.ConsumerGroup{}
+	return []core.ConsumerGroup{}, nil
 }
 
 func (s *SqliteStorage) NewConsumerGroup(core.ConsumerGroup) error {
@@ -165,9 +165,9 @@ func (s *SqliteStorage) NewConsumerGroup(core.ConsumerGroup) error {
 	return nil
 }
 
-func (s *SqliteStorage) Messages(core.Topic) []core.Message {
+func (s *SqliteStorage) Messages(core.Topic) ([]core.Message, error) {
 	// TODO
-	return []core.Message{}
+	return []core.Message{}, nil
 }
 
 func (s *SqliteStorage) NewMessage(core.Message) error {
@@ -177,7 +177,7 @@ func (s *SqliteStorage) NewMessage(core.Message) error {
 
 // TODO: add Storage implementation
 
-func newSqliteStorage(filename string) (Storage, error) {
+func newSqliteStorage(filename string) (core.Storage, error) {
 	db, err := sql.Open("sqlite3", filename)
 	if err != nil {
 		return nil, err

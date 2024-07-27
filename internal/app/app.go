@@ -6,9 +6,11 @@ import (
 	"sync"
 	"syscall"
 
+	"github.com/hop-/goi/internal/core"
 	"github.com/hop-/goi/internal/services"
-	"github.com/hop-/goi/internal/storages"
 	"github.com/hop-/golog"
+
+	_ "github.com/hop-/goi/internal/storages"
 )
 
 type App struct {
@@ -76,11 +78,11 @@ func (a *App) Start() {
 	go a.gracefulShutDownHandler()
 
 	// Init storage
-	err := storages.InitStorage(a.storageType, a.storageUri)
+	err := core.InitStorage(a.storageType, a.storageUri)
 	if err != nil {
 		golog.Fatal("Failed to initialize the storage", err.Error())
 	}
-	defer storages.GetStorage().Close()
+	defer core.GetStorage().Close()
 
 	for _, s := range a.services {
 		a.wg.Add(1)
