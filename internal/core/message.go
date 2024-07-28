@@ -9,6 +9,16 @@ type Message struct {
 	Topic      string
 }
 
-func AddMessage(m Message) error {
+func newMessage(content []byte, topic *Topic) (*Message, error) {
+	m := &Message{
+		Content: content,
+		Topic:   topic.Name,
+	}
+
+	err := addMessage(m)
+	return m, err
+}
+
+func addMessage(m *Message) error {
 	return GetStorage().NewMessage(m)
 }

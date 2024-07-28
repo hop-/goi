@@ -150,7 +150,7 @@ func (s *SqliteStorage) Topics() ([]core.Topic, error) {
 	return []core.Topic{}, nil
 }
 
-func (s *SqliteStorage) NewTopic(core.Topic) error {
+func (s *SqliteStorage) NewTopic(*core.Topic) error {
 	// TODO
 	return nil
 }
@@ -160,17 +160,17 @@ func (s *SqliteStorage) ConsumerGroups() ([]core.ConsumerGroup, error) {
 	return []core.ConsumerGroup{}, nil
 }
 
-func (s *SqliteStorage) NewConsumerGroup(core.ConsumerGroup) error {
+func (s *SqliteStorage) NewConsumerGroup(*core.ConsumerGroup) error {
 	// TODO
 	return nil
 }
 
-func (s *SqliteStorage) Messages(core.Topic) ([]core.Message, error) {
+func (s *SqliteStorage) Messages(*core.Topic) ([]core.Message, error) {
 	// TODO
 	return []core.Message{}, nil
 }
 
-func (s *SqliteStorage) NewMessage(core.Message) error {
+func (s *SqliteStorage) NewMessage(*core.Message) error {
 	// TODO
 	return nil
 }

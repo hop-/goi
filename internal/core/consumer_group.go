@@ -6,10 +6,20 @@ type ConsumerGroup struct {
 }
 
 var (
-	consumerGroups = make(map[string]ConsumerGroup)
+	consumerGroups = make(map[string]*ConsumerGroup)
 )
 
-func AddConsumerGroup(cg ConsumerGroup) error {
+func newConsumerGroup(name string) (*ConsumerGroup, error) {
+	cg := &ConsumerGroup{
+		Name: name,
+	}
+
+	err := addConsumerGroup(cg)
+
+	return cg, err
+}
+
+func addConsumerGroup(cg *ConsumerGroup) error {
 	err := GetStorage().NewConsumerGroup(cg)
 	if err != nil {
 		return err
@@ -21,14 +31,22 @@ func AddConsumerGroup(cg ConsumerGroup) error {
 	return nil
 }
 
-func LoadConsumerGroups() error {
+func loadConsumerGroups() error {
 	cgs, err := GetStorage().ConsumerGroups()
 	if err != nil {
 		return err
 	}
 
 	for _, cg := range cgs {
-		consumerGroups[cg.Name] = cg
+		consumerGroups[cg.Name] = &cg
+	}
+
+	return nil
+}
+
+func findConsumerGroupByName(name string) *ConsumerGroup {
+	if cg, ok := consumerGroups[name]; ok {
+		return cg
 	}
 
 	return nil

@@ -8,11 +8,11 @@ import (
 type Storage interface {
 	Init() error
 	Topics() ([]Topic, error)
-	NewTopic(Topic) error
+	NewTopic(*Topic) error
 	ConsumerGroups() ([]ConsumerGroup, error)
-	NewConsumerGroup(ConsumerGroup) error
-	Messages(Topic) ([]Message, error)
-	NewMessage(Message) error
+	NewConsumerGroup(*ConsumerGroup) error
+	Messages(*Topic) ([]Message, error)
+	NewMessage(*Message) error
 	Close() error
 }
 
@@ -33,7 +33,7 @@ func (asc *AtomicStorageContainer) Topics() ([]Topic, error) {
 
 	return asc.storage.Topics()
 }
-func (asc *AtomicStorageContainer) NewTopic(t Topic) error {
+func (asc *AtomicStorageContainer) NewTopic(t *Topic) error {
 	asc.mu.Lock()
 	defer asc.mu.Unlock()
 
@@ -45,19 +45,19 @@ func (asc *AtomicStorageContainer) ConsumerGroups() ([]ConsumerGroup, error) {
 
 	return asc.storage.ConsumerGroups()
 }
-func (asc *AtomicStorageContainer) NewConsumerGroup(cg ConsumerGroup) error {
+func (asc *AtomicStorageContainer) NewConsumerGroup(cg *ConsumerGroup) error {
 	asc.mu.Lock()
 	defer asc.mu.Unlock()
 
 	return asc.storage.NewConsumerGroup(cg)
 }
-func (asc *AtomicStorageContainer) Messages(t Topic) ([]Message, error) {
+func (asc *AtomicStorageContainer) Messages(t *Topic) ([]Message, error) {
 	asc.mu.Lock()
 	defer asc.mu.Unlock()
 
 	return asc.storage.Messages(t)
 }
-func (asc *AtomicStorageContainer) NewMessage(m Message) error {
+func (asc *AtomicStorageContainer) NewMessage(m *Message) error {
 	asc.mu.Lock()
 	defer asc.mu.Unlock()
 
