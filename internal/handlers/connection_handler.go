@@ -23,17 +23,3 @@ func ConnectionHandler(c network.SimpleConnection) error {
 		return fmt.Errorf("conn: unknown connection type %b", connType)
 	}
 }
-
-func consumerHandler(c *network.Connection) error {
-	c.WriteAll(network.OkRes)
-
-	// TODO: handle consumer
-	return nil
-}
-
-func producerHandler(c *network.Connection) error {
-	c.WriteAll(network.OkRes)
-
-	// TODO: handle producer
-	return nil
-}

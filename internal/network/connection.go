@@ -2,6 +2,12 @@ package network
 
 import "encoding/binary"
 
+const (
+	GeneralMessage = 0
+	SpecialCode    = 1
+	SpecialMessage = 2
+)
+
 type Connection struct {
 	conn SimpleConnection
 }
@@ -54,17 +60,29 @@ func (c *Connection) WriteAll(b []byte) error {
 	return nil
 }
 
-func (c *Connection) ReadMessage() ([]byte, error) {
+func (c *Connection) ReadMessage() (int, []byte, error) {
 	// Read the message size
 	var messageSize int64
 	binary.Read(c, binary.LittleEndian, &messageSize)
 
-	m := make([]byte, messageSize)
+	messageType := GeneralMessage
+	var m []byte
+	var err error
 
-	// Write whole message
-	err := c.ReadAll(m)
+	switch messageSize {
+	case -1:
+		m = make([]byte, 1)
+		// Read whole message
+		err = c.ReadAll(m)
+	case -2:
+		_, m, err = c.ReadMessage()
+	default:
+		m = make([]byte, messageSize)
+		// Read whole message
+		err = c.ReadAll(m)
+	}
 
-	return m, err
+	return messageType, m, err
 }
 
 func (c *Connection) WriteMessage(m []byte) error {
@@ -74,4 +92,20 @@ func (c *Connection) WriteMessage(m []byte) error {
 
 	// Write whole message
 	return c.WriteAll(m)
+}
+
+func (c *Connection) WriteSpecialCode(code byte) error {
+	// Write the special number for message size
+	binary.Write(c, binary.LittleEndian, int64(-1))
+
+	// Write whole message
+	return c.WriteAll([]byte{code})
+}
+
+func (c *Connection) WriteSpecialMessage(m []byte) error {
+	// Write the special number for message size
+	binary.Write(c, binary.LittleEndian, int64(-2))
+
+	// Write the message
+	return c.WriteMessage(m)
 }
