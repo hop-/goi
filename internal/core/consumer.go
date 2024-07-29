@@ -1,6 +1,9 @@
 package core
 
-import "fmt"
+import (
+	"fmt"
+	"sync"
+)
 
 type Consumer struct {
 	Name  string
@@ -10,6 +13,7 @@ type Consumer struct {
 var (
 	consumers        = make(map[string]*Consumer)
 	consumersByGroup = make(map[string]map[string]*Consumer)
+	cMu              = sync.Mutex{}
 )
 
 func newConsumer(name string, group *ConsumerGroup) (*Consumer, error) {
@@ -24,6 +28,9 @@ func newConsumer(name string, group *ConsumerGroup) (*Consumer, error) {
 }
 
 func addConsumer(c *Consumer) error {
+	cMu.Lock()
+	defer cMu.Unlock()
+
 	if _, ok := consumers[c.Name]; ok {
 		return fmt.Errorf("consumer with %s name is already regisered", c.Name)
 	}
@@ -47,6 +54,9 @@ func addConsumer(c *Consumer) error {
 }
 
 func removeConsumer(c *Consumer) error {
+	cMu.Lock()
+	defer cMu.Unlock()
+
 	delete(consumers, c.Name)
 
 	if cg, ok := consumersByGroup[c.group.Name]; ok {
@@ -58,6 +68,9 @@ func removeConsumer(c *Consumer) error {
 }
 
 func findConsumerByName(name string) *Consumer {
+	cMu.Lock()
+	defer cMu.Unlock()
+
 	if c, ok := consumers[name]; ok {
 		return c
 	}

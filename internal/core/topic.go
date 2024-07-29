@@ -1,6 +1,9 @@
 package core
 
-import "fmt"
+import (
+	"fmt"
+	"sync"
+)
 
 type Topic struct {
 	Id   *string
@@ -10,9 +13,25 @@ type Topic struct {
 var (
 	topics                = make(map[string]*Topic)
 	topicConsummingGroups = make(map[string]map[string]struct{})
+	tMu                   = sync.Mutex{}
 )
 
+func newTopic(name string) (*Topic, error) {
+	t := &Topic{
+		Name: name,
+	}
+
+	err := addTopic(t)
+	if err != nil {
+		return nil, err
+	}
+	return t, nil
+}
+
 func addTopic(t *Topic) error {
+	tMu.Lock()
+	defer tMu.Unlock()
+
 	err := GetStorage().NewTopic(t)
 	if err != nil {
 		return err
@@ -23,6 +42,9 @@ func addTopic(t *Topic) error {
 }
 
 func subscribeToTopic(topic string, cgName string) error {
+	tMu.Lock()
+	defer tMu.Unlock()
+
 	if _, ok := topics[topic]; !ok {
 		return fmt.Errorf("unknown topic to subscribe %s", topic)
 	}
@@ -40,12 +62,18 @@ func subscribeToTopic(topic string, cgName string) error {
 }
 
 func unsubscribeFromTopic(topic string, cgName string) {
+	tMu.Lock()
+	defer tMu.Unlock()
+
 	if subs, ok := topicConsummingGroups[topic]; ok {
 		delete(subs, cgName)
 	}
 }
 
 func loadTopics() error {
+	tMu.Lock()
+	defer tMu.Unlock()
+
 	tpcs, err := GetStorage().Topics()
 	if err != nil {
 		return err
@@ -59,6 +87,9 @@ func loadTopics() error {
 }
 
 func findTopicByName(name string) *Topic {
+	tMu.Lock()
+	defer tMu.Unlock()
+
 	if t, ok := topics[name]; ok {
 		return t
 	}

@@ -84,6 +84,11 @@ func (a *App) Start() {
 	}
 	defer core.GetStorage().Close()
 
+	err = core.LoadData()
+	if err != nil {
+		golog.Fatal("Failed to load data", err.Error())
+	}
+
 	for _, s := range a.services {
 		a.wg.Add(1)
 		go func() {

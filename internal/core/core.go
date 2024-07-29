@@ -1,8 +1,10 @@
 package core
 
-import "fmt"
+import (
+	"fmt"
+)
 
-func Init() error {
+func LoadData() error {
 	err := loadConsumerGroups()
 	if err != nil {
 		return err
@@ -11,18 +13,18 @@ func Init() error {
 	return loadTopics()
 }
 
-func NewConsumer(consumerName string, groupName string) error {
+func NewConsumer(consumerName string, groupName string) (*Consumer, error) {
 	cg := findConsumerGroupByName(groupName)
 	if cg == nil {
 		var err error
 		cg, err = newConsumerGroup(groupName)
 		if err != nil {
-			return err
+			return nil, err
 		}
 	}
 
-	_, err := newConsumer(consumerName, cg)
-	return err
+	c, err := newConsumer(consumerName, cg)
+	return c, err
 }
 
 func RemoveConsumer(name string) error {
@@ -41,5 +43,15 @@ func NewMessage(content []byte, topicName string) error {
 	}
 
 	_, err := newMessage(content, topic)
+	return err
+}
+
+func NewTopic(name string) error {
+	t := findTopicByName(name)
+	if t != nil {
+		return fmt.Errorf("topic %s is already exist", name)
+	}
+
+	_, err := newTopic(name)
 	return err
 }
