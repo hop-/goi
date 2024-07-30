@@ -23,8 +23,7 @@ func NewConsumer(consumerName string, groupName string) (*Consumer, error) {
 		}
 	}
 
-	c, err := newConsumer(consumerName, cg)
-	return c, err
+	return newConsumer(consumerName, cg)
 }
 
 func RemoveConsumer(name string) error {
@@ -36,22 +35,38 @@ func RemoveConsumer(name string) error {
 	return removeConsumer(c)
 }
 
-func NewMessage(content []byte, topicName string) error {
-	topic := findTopicByName(topicName)
-	if topic == nil {
-		return fmt.Errorf("unknown topic %s", topicName)
+func NewProducer(name string) (*Producer, error) {
+	p := findProducerByName(name)
+	if p != nil {
+		return nil, fmt.Errorf("producer %s is already exist", name)
 	}
 
-	_, err := newMessage(content, topic)
-	return err
+	return newProducer(name)
 }
 
-func NewTopic(name string) error {
-	t := findTopicByName(name)
-	if t != nil {
-		return fmt.Errorf("topic %s is already exist", name)
+func RemoveProducer(name string) error {
+	p := findProducerByName(name)
+	if p == nil {
+		return fmt.Errorf("unknown producer %s", name)
 	}
 
-	_, err := newTopic(name)
-	return err
+	return removeProducer(p)
+}
+
+func NewMessage(content []byte, topicName string) (*Message, error) {
+	topic := findTopicByName(topicName)
+	if topic == nil {
+		return nil, fmt.Errorf("unknown topic %s", topicName)
+	}
+
+	return newMessage(content, topic)
+}
+
+func NewTopic(name string) (*Topic, error) {
+	t := findTopicByName(name)
+	if t != nil {
+		return nil, fmt.Errorf("topic %s is already exist", name)
+	}
+
+	return newTopic(name)
 }
