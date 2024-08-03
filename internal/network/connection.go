@@ -109,3 +109,7 @@ func (c *Connection) WriteSpecialMessage(m []byte) error {
 	// Write the message
 	return c.WriteMessage(m)
 }
+
+func (c *Connection) Close() error {
+	return c.conn.Close()
+}

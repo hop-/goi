@@ -63,7 +63,6 @@ func (s *TcpService) Start() error {
 		go func() {
 			// net.Conn implements network.SimpleConnection interface
 			// no need for convertion
-
 			err = handlers.ConnectionHandler(c)
 			if err != nil {
 				golog.Error("Failed to handle the connection", err.Error())
