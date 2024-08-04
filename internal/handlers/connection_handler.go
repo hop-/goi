@@ -11,7 +11,11 @@ func ConnectionHandler(c network.SimpleConnection) error {
 
 	// Get connection type
 	connTypeBuff := make([]byte, 1)
-	conn.ReadAll(connTypeBuff)
+	err := conn.ReadAll(connTypeBuff)
+	if err != nil {
+		return err
+	}
+
 	connType := connTypeBuff[0]
 
 	switch connType {

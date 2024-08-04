@@ -1,12 +1,15 @@
 package goi
 
 import (
+	"fmt"
 	"sync"
 
 	"github.com/hop-/goi/internal/network"
 )
 
 type ConsumerConfig struct {
+	Name        *string
+	GroupName   *string
 	Host        *string
 	Port        *int
 	TcpPort     *int
@@ -14,16 +17,71 @@ type ConsumerConfig struct {
 }
 
 type Consumer struct {
-	conn   *network.Connection
-	config ConsumerConfig
-	mu     *sync.Mutex
+	name      string
+	groupName string
+	conn      *network.Connection
+	config    ConsumerConfig
+	mu        *sync.Mutex
 }
 
-func NewConsumer(config ConsumerConfig) *Consumer {
-	return &Consumer{
-		config: config,
-		mu:     &sync.Mutex{},
+func consumerHandshake(c *network.Connection, name string, groupName string) error {
+	// Send client type
+	err := c.WriteAll(network.ConsumerTypeMessage)
+	if err != nil {
+		return err
 	}
+
+	// Read confirmation
+	rejectErr := fmt.Errorf("handshake rejected from server")
+	smallBuff := make([]byte, 1)
+	err = c.ReadAll(smallBuff)
+	if err != nil {
+		return err
+	} else if smallBuff[0] != network.OkResCode {
+		return rejectErr
+	}
+
+	// Send producer details
+	c.WriteMessage([]byte(name))
+	c.WriteMessage([]byte(groupName))
+
+	// Read confirmation
+	err = c.ReadAll(smallBuff)
+	if err != nil {
+		return err
+	} else if smallBuff[0] != network.OkResCode {
+		return rejectErr
+	}
+
+	return nil
+}
+
+func NewConsumer(config ConsumerConfig) (*Consumer, error) {
+	var name, groupName string
+	var err error
+	if config.Name != nil {
+		name, err = randomUuidAsString()
+		if err != nil {
+			return nil, err
+		}
+	} else {
+		name = *config.Name
+	}
+	if config.GroupName != nil {
+		groupName, err = randomUuidAsString()
+		if err != nil {
+			return nil, err
+		}
+	} else {
+		groupName = *config.GroupName
+	}
+
+	return &Consumer{
+		name:      name,
+		groupName: groupName,
+		config:    config,
+		mu:        &sync.Mutex{},
+	}, nil
 }
 
 func (c *Consumer) Connect() error {
@@ -37,12 +95,15 @@ func (c *Consumer) Connect() error {
 
 	c.conn = network.NewConnection(conn)
 
-	return nil
+	return consumerHandshake(c.conn, c.name, c.groupName)
 }
 
 func (c *Consumer) Disconnect() error {
 	c.mu.Lock()
 	defer c.mu.Unlock()
+
+	// Send exit code
+	c.conn.WriteSpecialCode(network.ExitCode)
 
 	c.conn.Close()
 	return nil
