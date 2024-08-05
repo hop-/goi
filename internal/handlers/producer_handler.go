@@ -3,6 +3,7 @@ package handlers
 import (
 	"github.com/hop-/goi/internal/core"
 	"github.com/hop-/goi/internal/network"
+	"github.com/hop-/golog"
 )
 
 func handleProducerHandshake(c *network.Connection) (*core.Producer, error) {
@@ -39,13 +40,17 @@ func producerHandler(c *network.Connection) error {
 		return err
 	}
 
+	golog.Info("New producer accepted")
+
 	// Producer main loop
 producerMainLoop:
 	for {
+		golog.Debug("Waiting message from producer")
 		messageType, b, err := c.ReadMessage()
 		if err != nil {
 			return err
 		}
+		golog.Debug("Producer message has been received")
 
 		switch messageType {
 		// Handle special codes
@@ -53,6 +58,7 @@ producerMainLoop:
 			code := b[0]
 			// Exit code
 			if code == network.ExitCode {
+				golog.Info("Received exit code from prodcuer")
 				break producerMainLoop
 			}
 		// Handle special messages

@@ -75,12 +75,15 @@ func (s *QuicService) Start() error {
 				golog.Error("Failed to create Stream", err.Error())
 				return
 			}
+			defer s.Close()
 
 			// quic.Stream implements network.SimpleConnection interface
 			err = handlers.ConnectionHandler(s)
 			if err != nil {
 				golog.Error("Failed to handle the connection", err.Error())
 			}
+
+			golog.Info("QUIC connection closed", c.RemoteAddr())
 		}()
 	}
 

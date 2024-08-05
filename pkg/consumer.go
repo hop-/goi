@@ -3,6 +3,7 @@ package goi
 import (
 	"fmt"
 	"sync"
+	"time"
 
 	"github.com/hop-/goi/internal/network"
 )
@@ -22,6 +23,21 @@ type Consumer struct {
 	conn      *network.Connection
 	config    ConsumerConfig
 	mu        *sync.Mutex
+}
+
+func fillConsumerDefaults(c *ConsumerConfig) {
+	if c.Host == nil {
+		c.Host = &defaultHost
+	}
+	if c.Port == nil {
+		c.Port = &defaultPort
+	}
+	if c.TcpPort == nil {
+		c.TcpPort = c.Port
+	}
+	if c.TcpFallback == nil {
+		c.TcpFallback = &defaultFallback
+	}
 }
 
 func consumerHandshake(c *network.Connection, name string, groupName string) error {
@@ -59,7 +75,7 @@ func consumerHandshake(c *network.Connection, name string, groupName string) err
 func NewConsumer(config ConsumerConfig) (*Consumer, error) {
 	var name, groupName string
 	var err error
-	if config.Name != nil {
+	if config.Name == nil {
 		name, err = randomUuidAsString()
 		if err != nil {
 			return nil, err
@@ -67,7 +83,7 @@ func NewConsumer(config ConsumerConfig) (*Consumer, error) {
 	} else {
 		name = *config.Name
 	}
-	if config.GroupName != nil {
+	if config.GroupName == nil {
 		groupName, err = randomUuidAsString()
 		if err != nil {
 			return nil, err
@@ -75,6 +91,8 @@ func NewConsumer(config ConsumerConfig) (*Consumer, error) {
 	} else {
 		groupName = *config.GroupName
 	}
+
+	fillConsumerDefaults(&config)
 
 	return &Consumer{
 		name:      name,
@@ -102,10 +120,18 @@ func (c *Consumer) Disconnect() error {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
-	// Send exit code
-	c.conn.WriteSpecialCode(network.ExitCode)
+	defer c.conn.Close()
 
-	c.conn.Close()
+	// Send exit code
+	err := c.conn.WriteSpecialCode(network.ExitCode)
+	if err != nil {
+		return err
+	}
+
+	// This is tmp stupid workaround for quic-go issue
+	// https://github.com/quic-go/quic-go/issues/3291
+	time.Sleep(3 * time.Second)
+
 	return nil
 }
 

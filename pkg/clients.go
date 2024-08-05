@@ -10,6 +10,12 @@ import (
 	"github.com/quic-go/quic-go"
 )
 
+var (
+	defaultHost     = "localhost"
+	defaultPort     = 4554
+	defaultFallback = false
+)
+
 func connectQuic(host string, port int) (network.SimpleConnection, error) {
 	addr := fmt.Sprintf("%s:%d", host, port)
 
@@ -17,7 +23,7 @@ func connectQuic(host string, port int) (network.SimpleConnection, error) {
 		InsecureSkipVerify: true,
 	}
 
-	conn, err := quic.DialAddr(context.Background(), addr, tlsConfig, &quic.Config{})
+	conn, err := quic.DialAddr(context.TODO(), addr, tlsConfig, &quic.Config{})
 	if err != nil {
 		return nil, err
 	}

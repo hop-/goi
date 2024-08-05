@@ -1,6 +1,8 @@
 package network
 
-import "encoding/binary"
+import (
+	"encoding/binary"
+)
 
 const (
 	GeneralMessage = 0
@@ -63,18 +65,22 @@ func (c *Connection) WriteAll(b []byte) error {
 func (c *Connection) ReadMessage() (int, []byte, error) {
 	// Read the message size
 	var messageSize int64
-	binary.Read(c, binary.LittleEndian, &messageSize)
+	err := binary.Read(c, binary.LittleEndian, &messageSize)
+	if err != nil {
+		return 0, nil, err
+	}
 
 	messageType := GeneralMessage
 	var m []byte
-	var err error
 
 	switch messageSize {
 	case -1:
+		messageType = SpecialCode
 		m = make([]byte, 1)
 		// Read whole message
 		err = c.ReadAll(m)
 	case -2:
+		messageType = SpecialMessage
 		_, m, err = c.ReadMessage()
 	default:
 		m = make([]byte, messageSize)
@@ -88,7 +94,10 @@ func (c *Connection) ReadMessage() (int, []byte, error) {
 func (c *Connection) WriteMessage(m []byte) error {
 	// Write the message size
 	messageSize := len(m)
-	binary.Write(c, binary.LittleEndian, int64(messageSize))
+	err := binary.Write(c, binary.LittleEndian, int64(messageSize))
+	if err != nil {
+		return err
+	}
 
 	// Write whole message
 	return c.WriteAll(m)
@@ -96,7 +105,10 @@ func (c *Connection) WriteMessage(m []byte) error {
 
 func (c *Connection) WriteSpecialCode(code byte) error {
 	// Write the special number for message size
-	binary.Write(c, binary.LittleEndian, int64(-1))
+	err := binary.Write(c, binary.LittleEndian, int64(-1))
+	if err != nil {
+		return err
+	}
 
 	// Write whole message
 	return c.WriteAll([]byte{code})
@@ -104,7 +116,10 @@ func (c *Connection) WriteSpecialCode(code byte) error {
 
 func (c *Connection) WriteSpecialMessage(m []byte) error {
 	// Write the special number for message size
-	binary.Write(c, binary.LittleEndian, int64(-2))
+	err := binary.Write(c, binary.LittleEndian, int64(-2))
+	if err != nil {
+		return err
+	}
 
 	// Write the message
 	return c.WriteMessage(m)

@@ -61,12 +61,16 @@ func (s *TcpService) Start() error {
 
 		// Each connection is handeled in separate goroutine
 		go func() {
+			defer c.Close()
+
 			// net.Conn implements network.SimpleConnection interface
 			// no need for convertion
 			err = handlers.ConnectionHandler(c)
 			if err != nil {
 				golog.Error("Failed to handle the connection", err.Error())
 			}
+
+			golog.Info("TCP connection closed", c.RemoteAddr())
 		}()
 	}
 

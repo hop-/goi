@@ -3,6 +3,7 @@ package handlers
 import (
 	"github.com/hop-/goi/internal/core"
 	"github.com/hop-/goi/internal/network"
+	"github.com/hop-/golog"
 )
 
 func handleConsumerHandshake(c *network.Connection) (*core.Consumer, error) {
@@ -45,13 +46,17 @@ func consumerHandler(c *network.Connection) error {
 		return err
 	}
 
+	golog.Info("New consumer accepted")
+
 	// Consumer main loop
 consumerMainLoop:
 	for {
+		golog.Debug("Waiting message from consumer")
 		messageType, b, err := c.ReadMessage()
 		if err != nil {
 			return err
 		}
+		golog.Debug("Consumer message has been received")
 
 		switch messageType {
 		// Handle special codes
@@ -59,6 +64,7 @@ consumerMainLoop:
 			code := b[0]
 			// Exit code
 			if code == network.ExitCode {
+				golog.Info("Received exit code from consumer")
 				break consumerMainLoop
 			}
 		// Handle special messages
