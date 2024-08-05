@@ -72,6 +72,11 @@ func consumerHandshake(c *network.Connection, name string, groupName string) err
 	return nil
 }
 
+func sendCompressionInfo(c *network.Connection) error {
+	const compressorType = "none" // TODO: use real compressor
+	return c.WriteMessage([]byte(compressorType))
+}
+
 func NewConsumer(config ConsumerConfig) (*Consumer, error) {
 	var name, groupName string
 	var err error
@@ -113,7 +118,12 @@ func (c *Consumer) Connect() error {
 
 	c.conn = network.NewConnection(conn)
 
-	return consumerHandshake(c.conn, c.name, c.groupName)
+	err = consumerHandshake(c.conn, c.name, c.groupName)
+	if err != nil {
+		return err
+	}
+
+	return sendCompressionInfo(c.conn)
 }
 
 func (c *Consumer) Disconnect() error {

@@ -46,6 +46,11 @@ func consumerHandler(c *network.Connection) error {
 		return err
 	}
 
+	compressor, err := getCompressor(c)
+	if err != nil {
+		return err
+	}
+
 	golog.Info("New consumer accepted")
 
 	// Consumer main loop
@@ -75,6 +80,11 @@ consumerMainLoop:
 			}
 		// Handle other
 		default:
+			_, err := compressor.Compress(b)
+			if err != nil {
+				golog.Error("Failed to compress", err.Error())
+				continue consumerMainLoop
+			}
 			// TODO: handle consumer
 		}
 	}

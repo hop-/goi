@@ -1,10 +1,24 @@
 package handlers
 
 import (
+	"github.com/hop-/goi/internal/compressors"
 	"github.com/hop-/goi/internal/core"
 	"github.com/hop-/goi/internal/network"
 	"github.com/hop-/golog"
 )
+
+func getCompressor(c *network.Connection) (compressors.Compressor, error) {
+	// Read compressorType details
+	_, b, err := c.ReadMessage()
+	if err != nil {
+		return nil, err
+	}
+
+	compressorType := string(b)
+	golog.Debug("Compressor type", compressorType)
+
+	return compressors.New(compressorType)
+}
 
 func handleProducerHandshake(c *network.Connection) (*core.Producer, error) {
 	// Send confirmation
@@ -39,6 +53,10 @@ func producerHandler(c *network.Connection) error {
 	if err != nil {
 		return err
 	}
+	compressor, err := getCompressor(c)
+	if err != nil {
+		return err
+	}
 
 	golog.Info("New producer accepted")
 
@@ -58,7 +76,7 @@ producerMainLoop:
 			code := b[0]
 			// Exit code
 			if code == network.ExitCode {
-				golog.Info("Received exit code from prodcuer")
+				golog.Info("Received exit code from producer")
 				break producerMainLoop
 			}
 		// Handle special messages
@@ -69,6 +87,11 @@ producerMainLoop:
 			}
 		// Handle other
 		default:
+			_, err := compressor.Decompress(b)
+			if err != nil {
+				golog.Error("Failed to decompress", err.Error())
+				continue producerMainLoop
+			}
 			// TODO: handle producer
 		}
 	}

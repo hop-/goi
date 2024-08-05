@@ -111,7 +111,12 @@ func (p *Producer) Connect() error {
 
 	p.conn = network.NewConnection(conn)
 
-	return producerHandshake(p.conn, p.name)
+	err = producerHandshake(p.conn, p.name)
+	if err != nil {
+		return err
+	}
+
+	return sendCompressionInfo(p.conn)
 }
 
 func (p *Producer) Disconnect() error {
