@@ -137,7 +137,7 @@ func (s *SqliteStorage) Init() error {
 		return err
 	}
 
-	golog.Debug("Create messages table")
+	golog.Debug("Creating messages table")
 	return createMessagesTable(s)
 }
 

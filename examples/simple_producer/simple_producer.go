@@ -21,4 +21,10 @@ func main() {
 	defer p.Disconnect()
 
 	fmt.Println("Producer has been connected")
+
+	err = p.Send("test", []byte("Test message"))
+	if err != nil {
+		panic(err.Error())
+	}
+	fmt.Println("Message sent successfully")
 }

@@ -1,7 +1,6 @@
 package goi
 
 import (
-	"fmt"
 	"sync"
 	"time"
 
@@ -49,13 +48,9 @@ func consumerHandshake(c *network.Connection, name string, groupName string) err
 	}
 
 	// Read confirmation
-	rejectErr := fmt.Errorf("handshake rejected from server")
-	smallBuff := make([]byte, 1)
-	err = c.ReadAll(smallBuff)
+	err = readConfirmation(c)
 	if err != nil {
 		return err
-	} else if smallBuff[0] != network.OkResCode {
-		return rejectErr
 	}
 
 	// Send producer details
@@ -63,14 +58,7 @@ func consumerHandshake(c *network.Connection, name string, groupName string) err
 	c.WriteMessage([]byte(groupName))
 
 	// Read confirmation
-	err = c.ReadAll(smallBuff)
-	if err != nil {
-		return err
-	} else if smallBuff[0] != network.OkResCode {
-		return rejectErr
-	}
-
-	return nil
+	return readConfirmation(c)
 }
 
 func sendCompressionInfo(c *network.Connection) error {

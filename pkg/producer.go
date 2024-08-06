@@ -1,6 +1,7 @@
 package goi
 
 import (
+	"encoding/binary"
 	"fmt"
 	"sync"
 	"time"
@@ -11,7 +12,7 @@ import (
 )
 
 var (
-	errReject = fmt.Errorf("handshake rejected from server")
+	errReject = fmt.Errorf("rejected from the server")
 )
 
 type ProducerConfig struct {
@@ -35,6 +36,19 @@ func readConfirmation(c *network.Connection) error {
 	if err != nil {
 		return err
 	} else if smallBuff[0] != network.OkResCode {
+		return errReject
+	}
+
+	return nil
+}
+
+func readConfirmationCode(c *network.Connection) error {
+	t, b, err := c.ReadMessage()
+	if err != nil {
+		return err
+	} else if t != network.SpecialCode {
+		return fmt.Errorf("unexpected message type")
+	} else if b[0] != network.OkResCode {
 		return errReject
 	}
 
@@ -171,6 +185,22 @@ func (p *Producer) Disconnect() error {
 	time.Sleep(3 * time.Second)
 
 	return nil
+}
+
+func (p *Producer) Send(topic string, message []byte) error {
+	buff := make([]byte, 0, 4+len(topic)+len(message))
+	buff = binary.LittleEndian.AppendUint32(buff, uint32(len(topic)))
+	buff = append(buff, []byte(topic)...)
+	buff = append(buff, message...)
+
+	// TODO: compress
+
+	err := p.conn.WriteMessage(buff)
+	if err != nil {
+		return err
+	}
+
+	return readConfirmationCode(p.conn)
 }
 
 // TODO

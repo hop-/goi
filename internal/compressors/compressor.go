@@ -23,5 +23,5 @@ func New(compressorType string) (Compressor, error) {
 		return compressor, nil
 	}
 
-	return nil, fmt.Errorf("unknown compressor type %s", compressorType)
+	return nil, fmt.Errorf("unknown compression type %s", compressorType)
 }

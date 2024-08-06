@@ -1,6 +1,8 @@
 package handlers
 
 import (
+	"encoding/binary"
+
 	"github.com/hop-/goi/internal/compressors"
 	"github.com/hop-/goi/internal/core"
 	"github.com/hop-/goi/internal/network"
@@ -15,7 +17,7 @@ func getCompressor(c *network.Connection) (compressors.Compressor, error) {
 	}
 
 	compressorType := string(b)
-	golog.Debug("Compressor type", compressorType)
+	golog.Debug("Compression type", compressorType)
 
 	compressor, err := compressors.New(compressorType)
 	if err != nil {
@@ -91,13 +93,25 @@ producerMainLoop:
 			golog.Debug("Received ping from producer")
 			continue producerMainLoop
 		// Handle other
-		default:
-			_, err := compressor.Decompress(b)
+		case network.GeneralMessage:
+			buff, err := compressor.Decompress(b)
 			if err != nil {
 				golog.Error("Failed to decompress", err.Error())
 				continue producerMainLoop
 			}
-			// TODO: handle producer
+
+			topicSize := binary.LittleEndian.Uint32(buff[:4])
+			topic := string(buff[4 : 4+topicSize])
+			message := buff[4+topicSize:]
+
+			golog.Debugf("New message on %s topic with length of %d", topic, len(message))
+
+			// TODO: handle producer message on topic
+
+			err = c.WriteSpecialCode(network.OkResCode)
+			if err != nil {
+				return err
+			}
 		}
 	}
 
