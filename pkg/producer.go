@@ -7,6 +7,11 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/hop-/goi/internal/network"
+	"github.com/hop-/golog"
+)
+
+var (
+	errReject = fmt.Errorf("handshake rejected from server")
 )
 
 type ProducerConfig struct {
@@ -22,6 +27,18 @@ type Producer struct {
 	conn   *network.Connection
 	config ProducerConfig
 	mu     *sync.Mutex
+}
+
+func readConfirmation(c *network.Connection) error {
+	smallBuff := make([]byte, 1)
+	err := c.ReadAll(smallBuff)
+	if err != nil {
+		return err
+	} else if smallBuff[0] != network.OkResCode {
+		return errReject
+	}
+
+	return nil
 }
 
 func randomUuidAsString() (string, error) {
@@ -56,24 +73,18 @@ func producerHandshake(c *network.Connection, name string) error {
 	}
 
 	// Read confirmation
-	rejectErr := fmt.Errorf("handshake rejected from server")
-	smallBuff := make([]byte, 1)
-	err = c.ReadAll(smallBuff)
+	err = readConfirmation(c)
 	if err != nil {
 		return err
-	} else if smallBuff[0] != network.OkResCode {
-		return rejectErr
 	}
 
 	// Send producer details
 	c.WriteMessage([]byte(name))
 
 	// Read confirmation
-	err = c.ReadAll(smallBuff)
+	err = readConfirmation(c)
 	if err != nil {
 		return err
-	} else if smallBuff[0] != network.OkResCode {
-		return rejectErr
 	}
 
 	return nil
@@ -116,7 +127,31 @@ func (p *Producer) Connect() error {
 		return err
 	}
 
-	return sendCompressionInfo(p.conn)
+	err = sendCompressionInfo(p.conn)
+	if err != nil {
+		return err
+	}
+
+	// Ping loop
+	go func() {
+		errorCounter := 0
+		// TODO: add graceful exit
+		for {
+			time.Sleep(20 * time.Second) // hardcoded
+			err := p.conn.Ping()
+			if err != nil {
+				golog.Error("Failed to ping", err.Error())
+				errorCounter += 1
+				if errorCounter == 3 {
+					break
+				}
+				continue
+			}
+			errorCounter = 0
+		}
+	}()
+
+	return nil
 }
 
 func (p *Producer) Disconnect() error {
@@ -131,7 +166,7 @@ func (p *Producer) Disconnect() error {
 		return err
 	}
 
-	// This is tmp stupid workaround for quic-go issue
+	// This is a tmp stupid workaround for quic-go issue
 	// https://github.com/quic-go/quic-go/issues/3291
 	time.Sleep(3 * time.Second)
 

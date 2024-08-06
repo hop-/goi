@@ -6,8 +6,9 @@ import (
 
 const (
 	GeneralMessage = 0
-	SpecialCode    = 1
-	SpecialMessage = 2
+	SpecialCode    = -1
+	SpecialMessage = -2
+	PingMessage    = -3
 )
 
 type Connection struct {
@@ -74,14 +75,16 @@ func (c *Connection) ReadMessage() (int, []byte, error) {
 	var m []byte
 
 	switch messageSize {
-	case -1:
+	case SpecialCode:
 		messageType = SpecialCode
 		m = make([]byte, 1)
 		// Read whole message
 		err = c.ReadAll(m)
-	case -2:
+	case SpecialMessage:
 		messageType = SpecialMessage
 		_, m, err = c.ReadMessage()
+	case PingMessage:
+		messageType = PingMessage
 	default:
 		m = make([]byte, messageSize)
 		// Read whole message
@@ -105,7 +108,7 @@ func (c *Connection) WriteMessage(m []byte) error {
 
 func (c *Connection) WriteSpecialCode(code byte) error {
 	// Write the special number for message size
-	err := binary.Write(c, binary.LittleEndian, int64(-1))
+	err := binary.Write(c, binary.LittleEndian, int64(SpecialCode))
 	if err != nil {
 		return err
 	}
@@ -116,13 +119,17 @@ func (c *Connection) WriteSpecialCode(code byte) error {
 
 func (c *Connection) WriteSpecialMessage(m []byte) error {
 	// Write the special number for message size
-	err := binary.Write(c, binary.LittleEndian, int64(-2))
+	err := binary.Write(c, binary.LittleEndian, int64(SpecialMessage))
 	if err != nil {
 		return err
 	}
 
 	// Write the message
 	return c.WriteMessage(m)
+}
+
+func (c *Connection) Ping() error {
+	return binary.Write(c, binary.LittleEndian, int64(PingMessage))
 }
 
 func (c *Connection) Close() error {

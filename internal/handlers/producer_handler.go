@@ -17,7 +17,14 @@ func getCompressor(c *network.Connection) (compressors.Compressor, error) {
 	compressorType := string(b)
 	golog.Debug("Compressor type", compressorType)
 
-	return compressors.New(compressorType)
+	compressor, err := compressors.New(compressorType)
+	if err != nil {
+		return compressor, err
+	}
+
+	err = c.WriteAll(network.OkRes)
+
+	return compressor, err
 }
 
 func handleProducerHandshake(c *network.Connection) (*core.Producer, error) {
@@ -79,12 +86,10 @@ producerMainLoop:
 				golog.Info("Received exit code from producer")
 				break producerMainLoop
 			}
-		// Handle special messages
-		case network.SpecialMessage:
-			// Ping pong health check
-			if len(b) == 0 {
-				c.WriteMessage([]byte{})
-			}
+		// Ping pong health check
+		case network.PingMessage:
+			golog.Debug("Received ping from producer")
+			continue producerMainLoop
 		// Handle other
 		default:
 			_, err := compressor.Decompress(b)

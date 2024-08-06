@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/hop-/goi/internal/network"
+	"github.com/hop-/golog"
 )
 
 type ConsumerConfig struct {
@@ -74,7 +75,13 @@ func consumerHandshake(c *network.Connection, name string, groupName string) err
 
 func sendCompressionInfo(c *network.Connection) error {
 	const compressorType = "none" // TODO: use real compressor
-	return c.WriteMessage([]byte(compressorType))
+	err := c.WriteMessage([]byte(compressorType))
+	if err != nil {
+		return err
+	}
+
+	// Read confirmation
+	return readConfirmation(c)
 }
 
 func NewConsumer(config ConsumerConfig) (*Consumer, error) {
@@ -123,7 +130,31 @@ func (c *Consumer) Connect() error {
 		return err
 	}
 
-	return sendCompressionInfo(c.conn)
+	err = sendCompressionInfo(c.conn)
+	if err != nil {
+		return err
+	}
+
+	// Ping loop
+	go func() {
+		errorCounter := 0
+		// TODO: add graceful exit
+		for {
+			time.Sleep(10 * time.Second) // hardcoded
+			err := c.conn.Ping()
+			if err != nil {
+				golog.Error("Failed to ping", err.Error())
+				errorCounter += 1
+				if errorCounter == 3 {
+					break
+				}
+				continue
+			}
+			errorCounter = 0
+		}
+	}()
+
+	return nil
 }
 
 func (c *Consumer) Disconnect() error {
@@ -138,7 +169,7 @@ func (c *Consumer) Disconnect() error {
 		return err
 	}
 
-	// This is tmp stupid workaround for quic-go issue
+	// This is a tmp stupid workaround for quic-go issue
 	// https://github.com/quic-go/quic-go/issues/3291
 	time.Sleep(3 * time.Second)
 

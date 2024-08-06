@@ -72,12 +72,10 @@ consumerMainLoop:
 				golog.Info("Received exit code from consumer")
 				break consumerMainLoop
 			}
-		// Handle special messages
-		case network.SpecialMessage:
-			// Ping pong health check
-			if len(b) == 0 {
-				c.WriteMessage([]byte{})
-			}
+		// Ping pong health check
+		case network.PingMessage:
+			golog.Debug("Received ping from consumer")
+			continue consumerMainLoop
 		// Handle other
 		default:
 			_, err := compressor.Compress(b)
