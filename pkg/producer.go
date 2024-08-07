@@ -1,12 +1,12 @@
 package goi
 
 import (
-	"encoding/binary"
 	"fmt"
 	"sync"
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/hop-/goi/internal/core"
 	"github.com/hop-/goi/internal/network"
 	"github.com/hop-/golog"
 )
@@ -188,14 +188,10 @@ func (p *Producer) Disconnect() error {
 }
 
 func (p *Producer) Send(topic string, message []byte) error {
-	buff := make([]byte, 0, 4+len(topic)+len(message))
-	buff = binary.LittleEndian.AppendUint32(buff, uint32(len(topic)))
-	buff = append(buff, []byte(topic)...)
-	buff = append(buff, message...)
+	m := &core.Message{Topic: topic, Content: message}
 
 	// TODO: compress
-
-	err := p.conn.WriteMessage(buff)
+	err := p.conn.WriteMessage(m.ToBuff())
 	if err != nil {
 		return err
 	}

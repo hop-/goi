@@ -67,17 +67,17 @@ func producerHandler(c *network.Connection) error {
 		return err
 	}
 
-	golog.Info("New producer accepted")
+	golog.Infof("New producer %s accepted", producer.Name)
 
 	// Producer main loop
 producerMainLoop:
 	for {
-		golog.Debug("Waiting message from producer")
+		golog.Debug("Waiting message from producer", producer.Name)
 		messageType, b, err := c.ReadMessage()
 		if err != nil {
 			return err
 		}
-		golog.Debug("Producer message has been received")
+		golog.Debug("New message has been received from producer", producer.Name)
 
 		switch messageType {
 		// Handle special codes
@@ -85,12 +85,12 @@ producerMainLoop:
 			code := b[0]
 			// Exit code
 			if code == network.ExitCode {
-				golog.Info("Received exit code from producer")
+				golog.Info("Received exit code from producer", producer.Name)
 				break producerMainLoop
 			}
 		// Ping pong health check
 		case network.PingMessage:
-			golog.Debug("Received ping from producer")
+			golog.Debug("Received ping from producer", producer.Name)
 			continue producerMainLoop
 		// Handle other
 		case network.GeneralMessage:
@@ -104,7 +104,7 @@ producerMainLoop:
 			topic := string(buff[4 : 4+topicSize])
 			message := buff[4+topicSize:]
 
-			golog.Debugf("New message on %s topic with length of %d", topic, len(message))
+			golog.Debugf("New message on %s topic with length of %d from producer %s", topic, len(message), producer.Name)
 
 			// TODO: handle producer message on topic
 

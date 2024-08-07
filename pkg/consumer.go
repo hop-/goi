@@ -1,9 +1,11 @@
 package goi
 
 import (
+	"fmt"
 	"sync"
 	"time"
 
+	"github.com/hop-/goi/internal/core"
 	"github.com/hop-/goi/internal/network"
 	"github.com/hop-/golog"
 )
@@ -11,6 +13,7 @@ import (
 type ConsumerConfig struct {
 	Name        *string
 	GroupName   *string
+	Topic       *string
 	Host        *string
 	Port        *int
 	TcpPort     *int
@@ -20,6 +23,7 @@ type ConsumerConfig struct {
 type Consumer struct {
 	name      string
 	groupName string
+	topic     string
 	conn      *network.Connection
 	config    ConsumerConfig
 	mu        *sync.Mutex
@@ -92,11 +96,16 @@ func NewConsumer(config ConsumerConfig) (*Consumer, error) {
 		groupName = *config.GroupName
 	}
 
+	if config.Topic == nil {
+		return nil, fmt.Errorf("topic must be specified")
+	}
+
 	fillConsumerDefaults(&config)
 
 	return &Consumer{
 		name:      name,
 		groupName: groupName,
+		topic:     *config.Topic,
 		config:    config,
 		mu:        &sync.Mutex{},
 	}, nil
@@ -162,6 +171,27 @@ func (c *Consumer) Disconnect() error {
 	time.Sleep(3 * time.Second)
 
 	return nil
+}
+
+func (c *Consumer) ReadMessage() (string, []byte, error) {
+	err := c.conn.WriteSpecialMessage([]byte(network.MessageRequest))
+	if err != nil {
+		return "", nil, err
+	}
+
+	t, buff, err := c.conn.ReadMessage()
+	if err != nil {
+		return "", nil, err
+	}
+
+	if t != network.GeneralMessage {
+		return "", nil, fmt.Errorf("unexpected message type")
+	}
+
+	// TODO: decompress message
+	m := core.NewMessageFromBuff(buff)
+
+	return m.Topic, m.Content, nil
 }
 
 // TODO

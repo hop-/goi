@@ -4,13 +4,6 @@ import (
 	"encoding/binary"
 )
 
-const (
-	GeneralMessage = 0
-	SpecialCode    = -1
-	SpecialMessage = -2
-	PingMessage    = -3
-)
-
 type Connection struct {
 	conn SimpleConnection
 }

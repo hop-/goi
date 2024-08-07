@@ -51,17 +51,17 @@ func consumerHandler(c *network.Connection) error {
 		return err
 	}
 
-	golog.Info("New consumer accepted")
+	golog.Infof("New consumer %s accepted", consumer.Name)
 
 	// Consumer main loop
 consumerMainLoop:
 	for {
-		golog.Debug("Waiting message from consumer")
+		golog.Debug("Waiting message from consumer", consumer.Name)
 		messageType, b, err := c.ReadMessage()
 		if err != nil {
 			return err
 		}
-		golog.Debug("Consumer message has been received")
+		golog.Debug("New message has been received from consumer", consumer.Name)
 
 		switch messageType {
 		// Handle special codes
@@ -69,21 +69,21 @@ consumerMainLoop:
 			code := b[0]
 			// Exit code
 			if code == network.ExitCode {
-				golog.Info("Received exit code from consumer")
+				golog.Info("Received exit code from consumer", consumer.Name)
 				break consumerMainLoop
 			}
 		// Ping pong health check
 		case network.PingMessage:
-			golog.Debug("Received ping from consumer")
+			golog.Debug("Received ping from consumer", consumer.Name)
 			continue consumerMainLoop
-		// Handle other
-		default:
-			_, err := compressor.Compress(b)
-			if err != nil {
-				golog.Error("Failed to compress", err.Error())
-				continue consumerMainLoop
+		// Special messages
+		case network.SpecialMessage:
+			switch string(b) {
+			// requset a message
+			case network.MessageRequest:
+				_ = compressor
+				// TODO: handle message request
 			}
-			// TODO: handle consumer
 		}
 	}
 

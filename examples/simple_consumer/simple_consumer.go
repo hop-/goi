@@ -7,7 +7,8 @@ import (
 )
 
 func main() {
-	config := goi.ConsumerConfig{}
+	topic := "test"
+	config := goi.ConsumerConfig{Topic: &topic}
 
 	c, err := goi.NewConsumer(config)
 	if err != nil {
@@ -21,4 +22,11 @@ func main() {
 	defer c.Disconnect()
 
 	fmt.Println("Consumer has been connected")
+
+	topic, message, err := c.ReadMessage()
+	if err != nil {
+		panic(err.Error())
+	}
+
+	fmt.Printf("Message received on %s topic with message length of %d\n", topic, len(message))
 }

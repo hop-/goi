@@ -1,12 +1,12 @@
 package core
 
-import "time"
+import (
+	"encoding/binary"
+)
 
 type Message struct {
-	Id         *int
-	OccurredAt time.Time
-	Content    []byte
-	Topic      string
+	Content []byte
+	Topic   string
 }
 
 func newMessage(content []byte, topic *Topic) (*Message, error) {
@@ -17,6 +17,15 @@ func newMessage(content []byte, topic *Topic) (*Message, error) {
 
 	err := addMessage(m)
 	return m, err
+}
+
+func (m *Message) ToBuff() []byte {
+	buff := make([]byte, 0, 4+len(m.Topic)+len(m.Content))
+	buff = binary.LittleEndian.AppendUint32(buff, uint32(len(m.Topic)))
+	buff = append(buff, []byte(m.Topic)...)
+	buff = append(buff, m.Content...)
+
+	return buff
 }
 
 func addMessage(m *Message) error {

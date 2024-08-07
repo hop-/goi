@@ -1,6 +1,7 @@
 package core
 
 import (
+	"encoding/binary"
 	"fmt"
 )
 
@@ -53,13 +54,12 @@ func RemoveProducer(name string) error {
 	return removeProducer(p)
 }
 
-func NewMessage(content []byte, topicName string) (*Message, error) {
-	topic := findTopicByName(topicName)
-	if topic == nil {
-		return nil, fmt.Errorf("unknown topic %s", topicName)
-	}
+func NewMessageFromBuff(buff []byte) *Message {
+	topicSize := binary.LittleEndian.Uint32(buff[:4])
+	topic := string(buff[4 : 4+topicSize])
+	content := buff[4+topicSize:]
 
-	return newMessage(content, topic)
+	return &Message{Topic: topic, Content: content}
 }
 
 func NewTopic(name string) (*Topic, error) {

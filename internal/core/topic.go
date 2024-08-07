@@ -6,13 +6,12 @@ import (
 )
 
 type Topic struct {
-	Id   *string
 	Name string
 }
 
 var (
 	topics                = make(map[string]*Topic)
-	topicConsummingGroups = make(map[string]map[string]struct{})
+	topicConsumingGroups = make(map[string]map[string]struct{})
 	tMu                   = sync.Mutex{}
 )
 
@@ -49,12 +48,12 @@ func subscribeToTopic(topic string, cgName string) error {
 		return fmt.Errorf("unknown topic to subscribe %s", topic)
 	}
 
-	if subs, ok := topicConsummingGroups[topic]; ok {
+	if subs, ok := topicConsumingGroups[topic]; ok {
 		subs[cgName] = struct{}{}
 		return nil
 	}
 
-	topicConsummingGroups[topic] = map[string]struct{}{
+	topicConsumingGroups[topic] = map[string]struct{}{
 		cgName: {},
 	}
 
@@ -65,7 +64,7 @@ func unsubscribeFromTopic(topic string, cgName string) {
 	tMu.Lock()
 	defer tMu.Unlock()
 
-	if subs, ok := topicConsummingGroups[topic]; ok {
+	if subs, ok := topicConsumingGroups[topic]; ok {
 		delete(subs, cgName)
 	}
 }

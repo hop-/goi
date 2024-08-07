@@ -3,7 +3,6 @@ package core
 import "sync"
 
 type ConsumerGroup struct {
-	Id   *int
 	Name string
 }
 
