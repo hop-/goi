@@ -38,6 +38,6 @@ func (s *VoidStorage) NewMessage(*core.Message) error {
 
 // TODO: add Storage implementation
 
-func newVoidStorage(string) (core.Storage, error) {
+func newVoidStorage(string) (Storage, error) {
 	return &VoidStorage{}, nil
 }

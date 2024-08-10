@@ -9,14 +9,19 @@ type Message struct {
 	Topic   string
 }
 
-func newMessage(content []byte, topic *Topic) (*Message, error) {
-	m := &Message{
+func NewMessage(content []byte, topic *Topic) *Message {
+	return &Message{
 		Content: content,
 		Topic:   topic.Name,
 	}
+}
 
-	err := addMessage(m)
-	return m, err
+func NewMessageFromBuff(buff []byte) *Message {
+	topicSize := binary.LittleEndian.Uint32(buff[:4])
+	topic := string(buff[4 : 4+topicSize])
+	content := buff[4+topicSize:]
+
+	return &Message{Topic: topic, Content: content}
 }
 
 func (m *Message) ToBuff() []byte {
@@ -26,8 +31,4 @@ func (m *Message) ToBuff() []byte {
 	buff = append(buff, m.Content...)
 
 	return buff
-}
-
-func addMessage(m *Message) error {
-	return GetStorage().NewMessage(m)
 }

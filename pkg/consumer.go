@@ -1,6 +1,7 @@
 package goi
 
 import (
+	"encoding/binary"
 	"fmt"
 	"sync"
 	"time"
@@ -23,7 +24,7 @@ type ConsumerConfig struct {
 type Consumer struct {
 	name      string
 	groupName string
-	topic     string
+	topics    []string
 	conn      *network.Connection
 	config    ConsumerConfig
 	mu        *sync.Mutex
@@ -44,7 +45,7 @@ func fillConsumerDefaults(c *ConsumerConfig) {
 	}
 }
 
-func consumerHandshake(c *network.Connection, name string, groupName string) error {
+func consumerHandshake(c *network.Connection, name string, groupName string, topics []string) error {
 	// Send client type
 	err := c.WriteAll(network.ConsumerTypeMessage)
 	if err != nil {
@@ -58,8 +59,26 @@ func consumerHandshake(c *network.Connection, name string, groupName string) err
 	}
 
 	// Send producer details
-	c.WriteMessage([]byte(name))
-	c.WriteMessage([]byte(groupName))
+	err = c.WriteMessage([]byte(name))
+	if err != nil {
+		return err
+	}
+	err = c.WriteMessage([]byte(groupName))
+	if err != nil {
+		return err
+	}
+
+	// Send subscribed topics
+	err = binary.Write(c, binary.LittleEndian, int32(len(topics)))
+	if err != nil {
+		return err
+	}
+	for _, topic := range topics {
+		err = c.WriteMessage([]byte(topic))
+		if err != nil {
+			return err
+		}
+	}
 
 	// Read confirmation
 	return readConfirmation(c)
@@ -105,7 +124,7 @@ func NewConsumer(config ConsumerConfig) (*Consumer, error) {
 	return &Consumer{
 		name:      name,
 		groupName: groupName,
-		topic:     *config.Topic,
+		topics:    []string{*config.Topic},
 		config:    config,
 		mu:        &sync.Mutex{},
 	}, nil
@@ -122,7 +141,7 @@ func (c *Consumer) Connect() error {
 
 	c.conn = network.NewConnection(conn)
 
-	err = consumerHandshake(c.conn, c.name, c.groupName)
+	err = consumerHandshake(c.conn, c.name, c.groupName, c.topics)
 	if err != nil {
 		return err
 	}

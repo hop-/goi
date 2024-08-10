@@ -1,46 +1,92 @@
 package handlers
 
 import (
+	"encoding/binary"
+
 	"github.com/hop-/goi/internal/core"
+	"github.com/hop-/goi/internal/infra"
 	"github.com/hop-/goi/internal/network"
 	"github.com/hop-/golog"
 )
 
-func handleConsumerHandshake(c *network.Connection) (*core.Consumer, error) {
+func handleConsumerHandshake(c *network.Connection) (*core.Consumer, func(), error) {
 	// Send confirmation
 	err := c.WriteAll(network.OkRes)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	// Read consumer details
 	_, consumerName, err := c.ReadMessage()
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	_, consumerGroupName, err := c.ReadMessage()
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
-	consumer, err := core.NewConsumer(string(consumerName), string(consumerGroupName))
+	consumer, err := infra.NewConsumer(string(consumerName), string(consumerGroupName))
 	if err != nil {
-		return nil, err
+		return nil, nil, err
+	}
+
+	// Read topics to subscribe
+	var topicsCount int32
+	err = binary.Read(c, binary.LittleEndian, &topicsCount)
+	if err != nil {
+		return consumer, nil, err
+	}
+
+	topics := make([]string, 0, topicsCount)
+	for i := 0; i < int(topicsCount); i++ {
+		_, topic, err := c.ReadMessage()
+		if err != nil {
+			return consumer, nil, err
+		}
+
+		topics = append(topics, string(topic))
+	}
+
+	golog.Debugf("Topics for the consumer %s are %v", consumer.Name, topics)
+
+	// Subscribe
+	validTopics := make([]string, 0, topicsCount)
+	for _, topic := range topics {
+		err = infra.Subscribe(string(topic), consumer)
+		if err != nil {
+			golog.Error("Failed to subscribe to the topic", err)
+			continue
+		}
+		validTopics = append(validTopics, topic)
+	}
+
+	unsubscribeFunc := func() {
+		for _, topic := range validTopics {
+			err = infra.Unsubscribe(string(topic), consumer)
+			if err != nil {
+				golog.Error("Failed to unsubscribe from the topic", err)
+				continue
+			}
+		}
 	}
 
 	// Send confirmation
 	err = c.WriteAll(network.OkRes)
 	if err != nil {
-		return consumer, err
+		return consumer, unsubscribeFunc, err
 	}
 
-	return consumer, nil
+	return consumer, unsubscribeFunc, nil
 }
 
 func consumerHandler(c *network.Connection) error {
-	consumer, err := handleConsumerHandshake(c)
+	consumer, ufunc, err := handleConsumerHandshake(c)
 	if consumer != nil {
 		// Remove consumer, no matter the handshake status
-		defer core.RemoveConsumer(consumer.Name)
+		defer infra.RemoveConsumer(consumer.Name)
+	}
+	if ufunc != nil {
+		defer ufunc()
 	}
 	if err != nil {
 		return err
@@ -78,9 +124,9 @@ consumerMainLoop:
 			continue consumerMainLoop
 		// Special messages
 		case network.SpecialMessage:
-			switch string(b) {
-			// requset a message
-			case network.MessageRequest:
+			specialMessage := string(b)
+			if specialMessage == network.MessageRequest {
+				// Request a message
 				_ = compressor
 				// TODO: handle message request
 			}

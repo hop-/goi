@@ -1,18 +1,20 @@
-package core
+package storages
 
 import (
 	"fmt"
 	"sync"
+
+	"github.com/hop-/goi/internal/core"
 )
 
 type Storage interface {
 	Init() error
-	Topics() ([]Topic, error)
-	NewTopic(*Topic) error
-	ConsumerGroups() ([]ConsumerGroup, error)
-	NewConsumerGroup(*ConsumerGroup) error
-	Messages(*Topic) ([]Message, error)
-	NewMessage(*Message) error
+	Topics() ([]core.Topic, error)
+	NewTopic(*core.Topic) error
+	ConsumerGroups() ([]core.ConsumerGroup, error)
+	NewConsumerGroup(*core.ConsumerGroup) error
+	Messages(*core.Topic) ([]core.Message, error)
+	NewMessage(*core.Message) error
 	Close() error
 }
 
@@ -27,37 +29,37 @@ func (asc *AtomicStorageContainer) Init() error {
 
 	return asc.storage.Init()
 }
-func (asc *AtomicStorageContainer) Topics() ([]Topic, error) {
+func (asc *AtomicStorageContainer) Topics() ([]core.Topic, error) {
 	asc.mu.Lock()
 	defer asc.mu.Unlock()
 
 	return asc.storage.Topics()
 }
-func (asc *AtomicStorageContainer) NewTopic(t *Topic) error {
+func (asc *AtomicStorageContainer) NewTopic(t *core.Topic) error {
 	asc.mu.Lock()
 	defer asc.mu.Unlock()
 
 	return asc.storage.NewTopic(t)
 }
-func (asc *AtomicStorageContainer) ConsumerGroups() ([]ConsumerGroup, error) {
+func (asc *AtomicStorageContainer) ConsumerGroups() ([]core.ConsumerGroup, error) {
 	asc.mu.Lock()
 	defer asc.mu.Unlock()
 
 	return asc.storage.ConsumerGroups()
 }
-func (asc *AtomicStorageContainer) NewConsumerGroup(cg *ConsumerGroup) error {
+func (asc *AtomicStorageContainer) NewConsumerGroup(cg *core.ConsumerGroup) error {
 	asc.mu.Lock()
 	defer asc.mu.Unlock()
 
 	return asc.storage.NewConsumerGroup(cg)
 }
-func (asc *AtomicStorageContainer) Messages(t *Topic) ([]Message, error) {
+func (asc *AtomicStorageContainer) Messages(t *core.Topic) ([]core.Message, error) {
 	asc.mu.Lock()
 	defer asc.mu.Unlock()
 
 	return asc.storage.Messages(t)
 }
-func (asc *AtomicStorageContainer) NewMessage(m *Message) error {
+func (asc *AtomicStorageContainer) NewMessage(m *core.Message) error {
 	asc.mu.Lock()
 	defer asc.mu.Unlock()
 

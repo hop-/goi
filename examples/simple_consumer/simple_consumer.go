@@ -22,6 +22,7 @@ func main() {
 	defer c.Disconnect()
 
 	fmt.Println("Consumer has been connected")
+	fmt.Println("Reading a message")
 
 	topic, message, err := c.ReadMessage()
 	if err != nil {

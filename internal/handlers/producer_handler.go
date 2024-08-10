@@ -1,10 +1,9 @@
 package handlers
 
 import (
-	"encoding/binary"
-
 	"github.com/hop-/goi/internal/compressors"
 	"github.com/hop-/goi/internal/core"
+	"github.com/hop-/goi/internal/infra"
 	"github.com/hop-/goi/internal/network"
 	"github.com/hop-/golog"
 )
@@ -39,7 +38,7 @@ func handleProducerHandshake(c *network.Connection) (*core.Producer, error) {
 		return nil, err
 	}
 
-	producer, err := core.NewProducer(string(producerName))
+	producer, err := infra.NewProducer(string(producerName))
 	if err != nil {
 		return nil, err
 	}
@@ -57,7 +56,7 @@ func producerHandler(c *network.Connection) error {
 	producer, err := handleProducerHandshake(c)
 	if producer != nil {
 		// Remove producer, no matter the handshake status
-		defer core.RemoveProducer(producer.Name)
+		defer infra.RemoveProducer(producer.Name)
 	}
 	if err != nil {
 		return err
@@ -100,13 +99,11 @@ producerMainLoop:
 				continue producerMainLoop
 			}
 
-			topicSize := binary.LittleEndian.Uint32(buff[:4])
-			topic := string(buff[4 : 4+topicSize])
-			message := buff[4+topicSize:]
+			message := core.NewMessageFromBuff(buff)
 
-			golog.Debugf("New message on %s topic with length of %d from producer %s", topic, len(message), producer.Name)
+			golog.Debugf("New message on %s topic with length of %d from producer %s", message.Topic, len(message.Content), producer.Name)
 
-			// TODO: handle producer message on topic
+			infra.NewMessage(message)
 
 			err = c.WriteSpecialCode(network.OkResCode)
 			if err != nil {
