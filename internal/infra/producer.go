@@ -12,12 +12,24 @@ var (
 	pMu       = sync.Mutex{}
 )
 
-func newProducer(name string) (*core.Producer, error) {
-	p := core.NewProducer(name)
+func NewProducer(name string) (*core.Producer, error) {
+	p := findProducerByName(name)
+	if p != nil {
+		return nil, fmt.Errorf("producer %s is already exist", name)
+	}
 
-	err := addProducer(p)
+	p = core.NewProducer(name)
 
-	return p, err
+	return p, addProducer(p)
+}
+
+func RemoveProducer(name string) error {
+	p := findProducerByName(name)
+	if p == nil {
+		return fmt.Errorf("unknown producer %s", name)
+	}
+
+	return removeProducer(p)
 }
 
 func addProducer(p *core.Producer) error {

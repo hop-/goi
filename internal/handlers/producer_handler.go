@@ -103,7 +103,7 @@ producerMainLoop:
 
 			golog.Debugf("New message on %s topic with length of %d from producer %s", message.Topic, len(message.Content), producer.Name)
 
-			infra.NewMessage(message)
+			infra.ProcessNewMessage(message)
 
 			err = c.WriteSpecialCode(network.OkResCode)
 			if err != nil {

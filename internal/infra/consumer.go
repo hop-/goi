@@ -13,18 +13,28 @@ var (
 	cMu              = sync.Mutex{}
 )
 
-func newConsumer(name string, group *core.ConsumerGroup) (*core.Consumer, error) {
-	c := core.NewConsumer(name, group)
+func NewConsumer(consumerName string, groupName string) (*core.Consumer, error) {
+	cg, err := getOrCreateConsumerGroup(groupName)
+	if err != nil {
+		return nil, err
+	}
 
-	err := addConsumer(c)
+	c := core.NewConsumer(consumerName, cg)
 
-	return c, err
+	return c, addConsumer(c)
+}
+
+func RemoveConsumer(name string) error {
+	c := findConsumerByName(name)
+	if c == nil {
+		return fmt.Errorf("unknown consumer %s", name)
+	}
+
+	return removeConsumer(c)
 }
 
 func GetIdleConsumersByTopicName(topic string) ([]*core.Consumer, error) {
 	cs := make([]*core.Consumer, 0)
-
-
 
 	return cs, nil
 }

@@ -5,7 +5,7 @@ import (
 	"github.com/hop-/goi/internal/storages"
 )
 
-func NewMessage(m *core.Message) error {
+func ProcessNewMessage(m *core.Message) error {
 	// Store message
 	err := storages.GetStorage().NewMessage(m)
 	if err != nil {
@@ -17,6 +17,6 @@ func NewMessage(m *core.Message) error {
 	for _, queue := range queues {
 		queue.Push(m)
 	}
-	// TODO: push message to channels
+
 	return nil
 }

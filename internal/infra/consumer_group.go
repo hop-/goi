@@ -12,12 +12,15 @@ var (
 	cgMu           = sync.Mutex{}
 )
 
-func newConsumerGroup(name string) (*core.ConsumerGroup, error) {
-	cg := core.NewConsumerGroup(name)
+func getOrCreateConsumerGroup(name string) (*core.ConsumerGroup, error) {
+	cg := findConsumerGroupByName(name)
+	if cg != nil {
+		return cg, nil
+	}
 
-	err := addConsumerGroup(cg)
+	cg = core.NewConsumerGroup(name)
 
-	return cg, err
+	return cg, addConsumerGroup(cg)
 }
 
 func addConsumerGroup(cg *core.ConsumerGroup) error {
@@ -29,7 +32,6 @@ func addConsumerGroup(cg *core.ConsumerGroup) error {
 		return err
 	}
 
-	// It should be good to go when storage didn't return an error
 	consumerGroups[cg.Name] = cg
 
 	return nil
