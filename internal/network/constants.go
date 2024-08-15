@@ -15,10 +15,10 @@ var (
 	ProducerTypeMessage      = []byte{ProducerType}
 
 	// Response codes
-	OkResCode  byte = 'K'
-	BadResCode byte = 'N'
-	ExitCode   byte = 'X'
-	OkRes           = []byte{OkResCode}
+	GoodResCode byte = 'K'
+	BadResCode  byte = 'N'
+	ExitCode    byte = 'X'
+	OkRes            = []byte{GoodResCode}
 
 	// Special messages
 	MessageRequest = "+"

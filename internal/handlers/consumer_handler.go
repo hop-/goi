@@ -127,8 +127,21 @@ consumerMainLoop:
 			specialMessage := string(b)
 			if specialMessage == network.MessageRequest {
 				// Request a message
-				_ = compressor
-				// TODO: handle message request
+				message, err := infra.ReadMessage(consumer)
+				if err != nil {
+					golog.Error("Failed to read message", err.Error())
+					// TODO
+					continue
+				}
+
+				buff, err := compressor.Compress(message.ToBuff())
+				if err != nil {
+					golog.Error("Failed to compress message", err.Error())
+					// TODO
+					continue
+				}
+
+				c.WriteMessage(buff)
 			}
 		}
 	}

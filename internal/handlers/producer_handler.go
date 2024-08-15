@@ -105,7 +105,7 @@ producerMainLoop:
 
 			infra.ProcessNewMessage(message)
 
-			err = c.WriteSpecialCode(network.OkResCode)
+			err = c.WriteSpecialCode(network.GoodResCode)
 			if err != nil {
 				return err
 			}

@@ -35,7 +35,7 @@ func readConfirmation(c *network.Connection) error {
 	err := c.ReadAll(smallBuff)
 	if err != nil {
 		return err
-	} else if smallBuff[0] != network.OkResCode {
+	} else if smallBuff[0] != network.GoodResCode {
 		return errReject
 	}
 
@@ -48,7 +48,7 @@ func readConfirmationCode(c *network.Connection) error {
 		return err
 	} else if t != network.SpecialCode {
 		return fmt.Errorf("unexpected message type")
-	} else if b[0] != network.OkResCode {
+	} else if b[0] != network.GoodResCode {
 		return errReject
 	}
 

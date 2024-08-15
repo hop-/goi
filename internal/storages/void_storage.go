@@ -36,6 +36,10 @@ func (s *VoidStorage) NewMessage(*core.Message) error {
 	return nil
 }
 
+func (s *VoidStorage) NextMessageForConsumerGroup(cg *core.ConsumerGroup, t *core.Topic) (*core.Message, error) {
+	return nil, nil
+}
+
 // TODO: add Storage implementation
 
 func newVoidStorage(string) (Storage, error) {

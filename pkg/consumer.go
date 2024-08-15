@@ -210,6 +210,13 @@ func (c *Consumer) ReadMessage() (string, []byte, error) {
 	// TODO: decompress message
 	m := core.NewMessageFromBuff(buff)
 
+	if m.Offset == nil {
+		golog.Error("Received message without offset")
+		// TODO: send bad response
+		return m.Topic, m.Content, fmt.Errorf("message doesn't contain offset value")
+	}
+	// TODO: send good response
+
 	return m.Topic, m.Content, nil
 }
 

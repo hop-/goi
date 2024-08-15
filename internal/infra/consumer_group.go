@@ -5,6 +5,7 @@ import (
 
 	"github.com/hop-/goi/internal/core"
 	"github.com/hop-/goi/internal/storages"
+	"github.com/hop-/golog"
 )
 
 var (
@@ -33,6 +34,7 @@ func addConsumerGroup(cg *core.ConsumerGroup) error {
 	}
 
 	consumerGroups[cg.Name] = cg
+	golog.Debug("New consumer group", cg.Name)
 
 	return nil
 }

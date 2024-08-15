@@ -22,12 +22,14 @@ func main() {
 	defer c.Disconnect()
 
 	fmt.Println("Consumer has been connected")
-	fmt.Println("Reading a message")
+	fmt.Println("Reading messages")
 
-	topic, message, err := c.ReadMessage()
-	if err != nil {
-		panic(err.Error())
+	for {
+		topic, message, err := c.ReadMessage()
+		if err != nil {
+			panic(err.Error())
+		}
+
+		fmt.Printf("Message received on %s topic with message length of %d\n", topic, len(message))
 	}
-
-	fmt.Printf("Message received on %s topic with message length of %d\n", topic, len(message))
 }

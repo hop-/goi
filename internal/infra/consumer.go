@@ -5,12 +5,15 @@ import (
 	"sync"
 
 	"github.com/hop-/goi/internal/core"
+	"github.com/hop-/golog"
 )
 
 var (
-	consumers        = make(map[string]*core.Consumer)
-	consumersByGroup = make(map[string]map[string]*core.Consumer)
-	cMu              = sync.Mutex{}
+	consumers         = make(map[string]*core.Consumer)
+	consumersByGroup  = make(map[string]map[string]*core.Consumer)
+	topicsByConsumers = make(map[string]map[string]struct{})
+	tbsMu             = &sync.Mutex{}
+	cMu               = sync.Mutex{}
 )
 
 func NewConsumer(consumerName string, groupName string) (*core.Consumer, error) {
@@ -48,6 +51,9 @@ func addConsumer(c *core.Consumer) error {
 	}
 
 	consumers[c.Name] = c
+
+	golog.Debug("New consumer", c.Name)
+
 	if cg, ok := consumersByGroup[c.Group.Name]; ok {
 		if _, ok := cg[c.Name]; ok {
 			return fmt.Errorf("consumer with %s name is already registered in cg", c.Name)
@@ -79,6 +85,44 @@ func removeConsumer(c *core.Consumer) error {
 	return nil
 }
 
+func addTopicToConsumer(consumerName string, topic string) {
+	tbsMu.Lock()
+	defer tbsMu.Unlock()
+
+	if ts, ok := topicsByConsumers[consumerName]; ok {
+		ts[topic] = struct{}{}
+	} else {
+		topicsByConsumers[consumerName] = map[string]struct{}{
+			topic: {},
+		}
+	}
+}
+
+func removeTopicFromConsumer(consumerName string, topic string) {
+	tbsMu.Lock()
+	defer tbsMu.Unlock()
+
+	if ts, ok := topicsByConsumers[consumerName]; ok {
+		delete(ts, topic)
+	}
+}
+
+func getTopicsByConsumerName(consumerName string) []string {
+	tbsMu.Lock()
+	defer tbsMu.Unlock()
+
+	if ts, ok := topicsByConsumers[consumerName]; ok {
+		topics := make([]string, 0, len(ts))
+		for t := range ts {
+			topics = append(topics, t)
+		}
+
+		return topics
+	}
+
+	return nil
+}
+
 func findConsumerByName(name string) *core.Consumer {
 	cMu.Lock()
 	defer cMu.Unlock()
@@ -88,4 +132,21 @@ func findConsumerByName(name string) *core.Consumer {
 	}
 
 	return nil
+}
+
+func ReadMessage(c *core.Consumer) (*core.Message, error) {
+	topics := getTopicsByConsumerName(c.Name)
+	if len(topics) == 0 {
+		return nil, fmt.Errorf("unable to find any topic for the consumers")
+	}
+
+	topic := topics[0]
+
+	channel := getChannel(topic, c.Group.Name)
+	if channel == nil {
+		return nil, fmt.Errorf("unknown subscription %s for %s topic", c.Group.Name, topic)
+	}
+
+	m := channel.PopBlocked()
+	return m, nil
 }

@@ -6,13 +6,14 @@ import (
 
 	"github.com/hop-/goi/internal/core"
 	"github.com/hop-/goi/internal/storages"
+	"github.com/hop-/golog"
 )
 
 var (
-	topics               = make(map[string]*core.Topic)
-	tMu                  = sync.Mutex{}
-	subscriptionsByTopic = make(map[string]map[string]*ConsumerGroupMessageQueue)
-	cgsMu                = sync.Mutex{}
+	topics                = make(map[string]*core.Topic)
+	tMu                   = sync.Mutex{}
+	subscriptionsByTopics = make(map[string]map[string]*ConsumerGroupMessageQueue)
+	cgsMu                 = sync.Mutex{}
 )
 
 func NewTopic(name string) (*core.Topic, error) {
@@ -37,6 +38,8 @@ func addTopic(t *core.Topic) error {
 
 	topics[t.Name] = t
 
+	golog.Debug("New topic", t.Name)
+
 	return nil
 }
 
@@ -48,15 +51,21 @@ func subscribeToTopic(topic string, cgName string) error {
 		return fmt.Errorf("unknown topic to subscribe %s", topic)
 	}
 
-	if subs, ok := subscriptionsByTopic[topic]; ok {
+	if subs, ok := subscriptionsByTopics[topic]; ok {
 		if _, ok := subs[cgName]; !ok {
-			subs[cgName] = newConsumerGroupMessageQueue()
+			q := newConsumerGroupMessageQueue()
+			loadMessagesFromStorage(cgName, topic, q)
+			subs[cgName] = q
 		}
+
 		return nil
 	}
 
-	subscriptionsByTopic[topic] = map[string]*ConsumerGroupMessageQueue{
-		cgName: newConsumerGroupMessageQueue(),
+	q := newConsumerGroupMessageQueue()
+	loadMessagesFromStorage(cgName, topic, q)
+
+	subscriptionsByTopics[topic] = map[string]*ConsumerGroupMessageQueue{
+		cgName: q,
 	}
 
 	return nil
@@ -66,7 +75,7 @@ func unsubscribeFromTopic(topic string, cgName string) error {
 	cgsMu.Lock()
 	defer cgsMu.Unlock()
 
-	if subs, ok := subscriptionsByTopic[topic]; ok {
+	if subs, ok := subscriptionsByTopics[topic]; ok {
 		delete(subs, cgName)
 		return nil
 	}
@@ -74,16 +83,27 @@ func unsubscribeFromTopic(topic string, cgName string) error {
 	return fmt.Errorf("unknown subscription or topic")
 }
 
-func getOnEdgeConsumerGroupChannelsForTopic(topic string) []*ConsumerGroupMessageQueue {
-	if subs, ok := subscriptionsByTopic[topic]; ok {
-		onEdgeConsumerGroups := make([]*ConsumerGroupMessageQueue, 0, len(subs))
-		for _, q := range subs {
-			if q.IsOnEdge {
-				onEdgeConsumerGroups = append(onEdgeConsumerGroups, q)
-			}
-		}
-		return onEdgeConsumerGroups
+func getConsumerGroupChannelsForTopic(topic string) map[string]*ConsumerGroupMessageQueue {
+	cgsMu.Lock()
+	defer cgsMu.Unlock()
+
+	if subs, ok := subscriptionsByTopics[topic]; ok {
+		return subs
 	}
+
+	return nil
+}
+
+func getChannel(topic string, consumerGroupName string) *ConsumerGroupMessageQueue {
+	cgsMu.Lock()
+	defer cgsMu.Unlock()
+
+	if subs, ok := subscriptionsByTopics[topic]; ok {
+		if channel, ok := subs[consumerGroupName]; ok {
+			return channel
+		}
+	}
+
 	return nil
 }
 
@@ -98,6 +118,11 @@ func loadTopics() error {
 
 	for _, t := range tpcs {
 		topics[t.Name] = &t
+	}
+
+	// Add test topic if not exist
+	if _, ok := topics["test"]; !ok {
+		topics["test"] = core.NewTopic("test")
 	}
 
 	return nil

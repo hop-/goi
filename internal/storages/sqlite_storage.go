@@ -175,6 +175,11 @@ func (s *SqliteStorage) NewMessage(*core.Message) error {
 	return nil
 }
 
+func (s *SqliteStorage) NextMessageForConsumerGroup(cg *core.ConsumerGroup, t *core.Topic) (*core.Message, error) {
+	// TODO
+	return nil, nil
+}
+
 // TODO: add Storage implementation
 
 func newSqliteStorage(filename string) (Storage, error) {

@@ -9,19 +9,18 @@ import (
 type MessageQueue chan *core.Message
 
 const (
-	messageQueueCapacity = 10
+	messageQueueCapacity = 20
 )
 
 type ConsumerGroupMessageQueue struct {
-	mu       *sync.Mutex
-	queue    MessageQueue
-	IsOnEdge bool
+	mu    *sync.Mutex
+	queue MessageQueue
 }
 
 func newConsumerGroupMessageQueue() *ConsumerGroupMessageQueue {
 	return &ConsumerGroupMessageQueue{
-		queue:    make(MessageQueue, messageQueueCapacity),
-		IsOnEdge: false,
+		queue: make(MessageQueue, messageQueueCapacity),
+		mu:    &sync.Mutex{},
 	}
 }
 
@@ -41,12 +40,7 @@ func (q *ConsumerGroupMessageQueue) Push(m *core.Message) bool {
 	q.mu.Lock()
 	defer q.mu.Unlock()
 
-	if !q.IsOnEdge {
-		return false
-	}
-
 	if q.IsFull() {
-		q.IsOnEdge = false
 		return false
 	}
 
