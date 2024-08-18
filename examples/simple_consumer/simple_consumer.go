@@ -25,7 +25,7 @@ func main() {
 	fmt.Println("Reading messages")
 
 	for {
-		topic, message, err := c.ReadMessage()
+		topic, message, err := c.Read()
 		if err != nil {
 			panic(err.Error())
 		}

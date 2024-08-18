@@ -100,6 +100,7 @@ func createMessagesTable(s *SqliteStorage) error {
 		id INTEGER PRIMARY KEY,
 		occurred_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
 		content BLOB,
+		offset INTEGER NOT NULL,
 		topic_id INTEGER NOT NULL,
 		FOREIGN KEY (topic_id) REFERENCES topics(id)
 	)`)
@@ -109,6 +110,10 @@ func createMessagesTable(s *SqliteStorage) error {
 
 	// Create indeces
 	_, err = s.db.Exec(`CREATE INDEX IF NOT EXISTS ix_message_occured_at ON messages (occurred_at DESC)`)
+	if err != nil {
+		return err
+	}
+	_, err = s.db.Exec(`CREATE UNIQUE INDEX IF NOT EXISTS uq_message_topic_offset ON messages (topic_id, offset DESC)`)
 	return err
 }
 
@@ -165,9 +170,14 @@ func (s *SqliteStorage) NewConsumerGroup(*core.ConsumerGroup) error {
 	return nil
 }
 
-func (s *SqliteStorage) Messages(*core.Topic) ([]core.Message, error) {
+func (s *SqliteStorage) NewConsumerGroupState(cgs *core.ConsumerGroupState) error {
 	// TODO
-	return []core.Message{}, nil
+	return nil
+}
+
+func (s *SqliteStorage) ConsumerGroupStateByConsumerGroup(cg *core.ConsumerGroup) (*core.ConsumerGroupState, error) {
+	// TODO
+	return nil, nil
 }
 
 func (s *SqliteStorage) NewMessage(*core.Message) error {
@@ -175,7 +185,7 @@ func (s *SqliteStorage) NewMessage(*core.Message) error {
 	return nil
 }
 
-func (s *SqliteStorage) NextMessageForConsumerGroup(cg *core.ConsumerGroup, t *core.Topic) (*core.Message, error) {
+func (s *SqliteStorage) MessageByTopicAndOffset(t *core.Topic, offset int64) (*core.Message, error) {
 	// TODO
 	return nil, nil
 }

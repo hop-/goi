@@ -13,9 +13,10 @@ type Storage interface {
 	NewTopic(*core.Topic) error
 	ConsumerGroups() ([]core.ConsumerGroup, error)
 	NewConsumerGroup(*core.ConsumerGroup) error
-	Messages(*core.Topic) ([]core.Message, error)
+	NewConsumerGroupState(*core.ConsumerGroupState) error
+	ConsumerGroupStateByConsumerGroup(*core.ConsumerGroup) (*core.ConsumerGroupState, error)
 	NewMessage(*core.Message) error
-	NextMessageForConsumerGroup(*core.ConsumerGroup, *core.Topic) (*core.Message, error)
+	MessageByTopicAndOffset(*core.Topic, int64) (*core.Message, error)
 	Close() error
 }
 
@@ -59,11 +60,18 @@ func (asc *AtomicStorageContainer) NewConsumerGroup(cg *core.ConsumerGroup) erro
 	return asc.storage.NewConsumerGroup(cg)
 }
 
-func (asc *AtomicStorageContainer) Messages(t *core.Topic) ([]core.Message, error) {
+func (asc *AtomicStorageContainer) NewConsumerGroupState(cgs *core.ConsumerGroupState) error {
 	asc.mu.Lock()
 	defer asc.mu.Unlock()
 
-	return asc.storage.Messages(t)
+	return asc.storage.NewConsumerGroupState(cgs)
+}
+
+func (asc *AtomicStorageContainer) ConsumerGroupStateByConsumerGroup(cg *core.ConsumerGroup) (*core.ConsumerGroupState, error) {
+	asc.mu.Lock()
+	defer asc.mu.Unlock()
+
+	return asc.storage.ConsumerGroupStateByConsumerGroup(cg)
 }
 
 func (asc *AtomicStorageContainer) NewMessage(m *core.Message) error {
@@ -73,11 +81,11 @@ func (asc *AtomicStorageContainer) NewMessage(m *core.Message) error {
 	return asc.storage.NewMessage(m)
 }
 
-func (asc *AtomicStorageContainer) NextMessageForConsumerGroup(cg *core.ConsumerGroup, t *core.Topic) (*core.Message, error) {
+func (asc *AtomicStorageContainer) MessageByTopicAndOffset(t *core.Topic, offset int64) (*core.Message, error) {
 	asc.mu.Lock()
 	defer asc.mu.Unlock()
 
-	return asc.storage.NextMessageForConsumerGroup(cg, t)
+	return asc.storage.MessageByTopicAndOffset(t, offset)
 }
 
 func (asc *AtomicStorageContainer) Close() error {

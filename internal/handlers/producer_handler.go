@@ -99,7 +99,12 @@ producerMainLoop:
 				continue producerMainLoop
 			}
 
-			message := core.NewMessageFromBuff(buff)
+			message, err := infra.NewMessageFromBuff(buff)
+			if err != nil {
+				golog.Error("Failed to create message from buffer", err.Error())
+				// TODO
+				continue producerMainLoop
+			}
 
 			golog.Debugf("New message on %s topic with length of %d from producer %s", message.Topic, len(message.Content), producer.Name)
 

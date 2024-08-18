@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/hop-/goi/internal/core"
 	"github.com/hop-/goi/internal/network"
 	"github.com/hop-/golog"
 )
@@ -187,16 +186,20 @@ func (p *Producer) Disconnect() error {
 	return nil
 }
 
-func (p *Producer) Send(topic string, message []byte) error {
-	m := &core.Message{Topic: topic, Content: message}
-
+func (p *Producer) SendMessage(m *Message) error {
 	// TODO: compress
-	err := p.conn.WriteMessage(m.ToBuff())
+	err := p.conn.WriteMessage(m.toBuff())
 	if err != nil {
 		return err
 	}
 
 	return readConfirmationCode(p.conn)
+}
+
+func (p *Producer) Send(topic string, message []byte) error {
+	m := &Message{Topic: topic, Content: message}
+
+	return p.SendMessage(m)
 }
 
 // TODO

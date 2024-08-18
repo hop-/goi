@@ -1,6 +1,7 @@
 package infra
 
 import (
+	"encoding/binary"
 	"fmt"
 
 	"github.com/hop-/goi/internal/core"
@@ -8,6 +9,42 @@ import (
 	"github.com/hop-/golog"
 )
 
+func NewMessageFromBuff(buff []byte) (*core.Message, error) {
+	offset := int64(binary.LittleEndian.Uint64(buff[:8]))
+	topicSize := binary.LittleEndian.Uint32(buff[8:12])
+	topicName := string(buff[12 : 12+topicSize])
+	topic := findTopicByName(topicName)
+	if topic == nil {
+		return nil, fmt.Errorf("message on unknown topic %s", topicName)
+	}
+	content := buff[12+topicSize:]
+
+	m := core.NewMessage(content, topic)
+	if offset >= 0 {
+		m.Offset = &offset
+	}
+
+	return m, nil
+}
+
+func MessageToBuff(m *core.Message) ([]byte, error) {
+	if m.Topic == nil {
+		return nil, fmt.Errorf("topic must be set")
+	}
+	buff := make([]byte, 0, 12+len(m.Topic.Name)+len(m.Content))
+
+	var offset int64 = -1
+	if m.Offset != nil {
+		offset = *m.Offset
+	}
+	buff = binary.LittleEndian.AppendUint64(buff, uint64(offset))
+
+	buff = binary.LittleEndian.AppendUint32(buff, uint32(len(m.Topic.Name)))
+	buff = append(buff, []byte(m.Topic.Name)...)
+	buff = append(buff, m.Content...)
+
+	return buff, nil
+}
 func ProcessNewMessage(m *core.Message) error {
 	// Store message
 	err := storages.GetStorage().NewMessage(m)
@@ -20,13 +57,13 @@ func ProcessNewMessage(m *core.Message) error {
 	m.Offset = &offset
 
 	// Get all consumer group channels which are waiting for a new message from this topic
-	queues := getConsumerGroupChannelsForTopic(m.Topic)
+	queues := getConsumerGroupChannelsForTopic(m.Topic.Name)
 	golog.Debug(len(queues), "Queue(s) to push")
 	for cgName, queue := range queues {
 		pushed := queue.Push(m)
 
 		if !pushed {
-			go loadMessagesFromStorage(cgName, m.Topic, queue)
+			go loadMessagesFromStorage(cgName, m.Topic.Name, queue)
 		}
 	}
 
@@ -60,5 +97,8 @@ func getNextMessageFromStorage(consumerGroupName string, topicName string) (*cor
 		return nil, fmt.Errorf("unknown topic %s", topicName)
 	}
 
-	return storages.GetStorage().NextMessageForConsumerGroup(cg, t)
+	// TODO: get consumerGroup stats and next message offset
+	offset := 1
+
+	return storages.GetStorage().MessageByTopicAndOffset(t, int64(offset))
 }

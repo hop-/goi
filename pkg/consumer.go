@@ -6,7 +6,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/hop-/goi/internal/core"
 	"github.com/hop-/goi/internal/network"
 	"github.com/hop-/golog"
 )
@@ -192,32 +191,42 @@ func (c *Consumer) Disconnect() error {
 	return nil
 }
 
-func (c *Consumer) ReadMessage() (string, []byte, error) {
+func (c *Consumer) ReadMessage() (*Message, error) {
 	err := c.conn.WriteSpecialMessage([]byte(network.MessageRequest))
 	if err != nil {
-		return "", nil, err
+		return nil, err
 	}
 
 	t, buff, err := c.conn.ReadMessage()
 	if err != nil {
-		return "", nil, err
+		return nil, err
 	}
 
 	if t != network.GeneralMessage {
-		return "", nil, fmt.Errorf("unexpected message type")
+		return nil, fmt.Errorf("unexpected message type")
 	}
 
 	// TODO: decompress message
-	m := core.NewMessageFromBuff(buff)
+	m := newMessageFromBuff(buff)
 
 	if m.Offset == nil {
 		golog.Error("Received message without offset")
 		// TODO: send bad response
-		return m.Topic, m.Content, fmt.Errorf("message doesn't contain offset value")
+		return m, fmt.Errorf("message doesn't contain offset value")
 	}
 	// TODO: send good response
 
-	return m.Topic, m.Content, nil
+	return m, nil
+}
+
+func (c *Consumer) Read() (string, []byte, error) {
+	m, err := c.ReadMessage()
+
+	if m != nil {
+		return m.Topic, m.Content, err
+	}
+
+	return "", nil, err
 }
 
 // TODO
