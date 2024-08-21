@@ -75,7 +75,7 @@ func loadMessagesFromStorage(consumerGroupName string, topicName string, queue *
 		message, err := getNextMessageFromStorage(consumerGroupName, topicName)
 		if err != nil {
 			golog.Error("Failed to retrieve a message from the storage", err.Error())
-			// TODO: manage the error
+			// TODO: handle the error properly
 			continue
 		} else if message == nil {
 			// No more message to retrieve from the storage
@@ -97,7 +97,7 @@ func getNextMessageFromStorage(consumerGroupName string, topicName string) (*cor
 		return nil, fmt.Errorf("unknown topic %s", topicName)
 	}
 
-	// TODO: get consumerGroup stats and next message offset
+	// TODO: get consumer group stats and next message offset
 	offset := 1
 
 	return storages.GetStorage().MessageByTopicAndOffset(t, int64(offset))

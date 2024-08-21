@@ -5,7 +5,6 @@ import (
 )
 
 type Compressor interface {
-	// TODO
 	Compress([]byte) ([]byte, error)
 	Decompress([]byte) ([]byte, error)
 }

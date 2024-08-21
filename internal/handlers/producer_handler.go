@@ -102,7 +102,7 @@ producerMainLoop:
 			message, err := infra.NewMessageFromBuff(buff)
 			if err != nil {
 				golog.Error("Failed to create message from buffer", err.Error())
-				// TODO
+				// TODO: handle the error properly
 				continue producerMainLoop
 			}
 

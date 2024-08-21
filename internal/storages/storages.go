@@ -4,5 +4,6 @@ package storages
 func init() {
 	RegisterStorage("void", newVoidStorage)
 	RegisterStorage("sqlite", newSqliteStorage)
-	// TODO: register all storage generators here
+
+	// Register all storage generators here
 }

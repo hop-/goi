@@ -84,7 +84,7 @@ func consumerHandshake(c *network.Connection, name string, groupName string, top
 }
 
 func sendCompressionInfo(c *network.Connection) error {
-	const compressorType = "none" // TODO: use real compressor
+	const compressorType = "none" // TODO: use a real compressor
 	err := c.WriteMessage([]byte(compressorType))
 	if err != nil {
 		return err
@@ -228,5 +228,3 @@ func (c *Consumer) Read() (string, []byte, error) {
 
 	return "", nil, err
 }
-
-// TODO

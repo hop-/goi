@@ -190,8 +190,6 @@ func (s *SqliteStorage) MessageByTopicAndOffset(t *core.Topic, offset int64) (*c
 	return nil, nil
 }
 
-// TODO: add Storage implementation
-
 func newSqliteStorage(filename string) (Storage, error) {
 	db, err := sql.Open("sqlite3", filename)
 	if err != nil {

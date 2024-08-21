@@ -48,8 +48,6 @@ func (s *VoidStorage) MessageByTopicAndOffset(*core.Topic, int64) (*core.Message
 	return nil, nil
 }
 
-// TODO: add Storage implementation
-
 func newVoidStorage(string) (Storage, error) {
 	return &VoidStorage{}, nil
 }

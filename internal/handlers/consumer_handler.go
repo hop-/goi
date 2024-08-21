@@ -130,21 +130,21 @@ consumerMainLoop:
 				message, err := infra.ReadMessage(consumer)
 				if err != nil {
 					golog.Error("Failed to read message", err.Error())
-					// TODO
+					// TODO: handle the error properly
 					continue consumerMainLoop
 				}
 
 				buff, err := infra.MessageToBuff(message)
 				if err != nil {
 					golog.Error("Failed to create buffer from message", err.Error())
-					// TODO
+					// TODO: handle the error properly
 					continue consumerMainLoop
 				}
 
 				buff, err = compressor.Compress(buff)
 				if err != nil {
 					golog.Error("Failed to compress message", err.Error())
-					// TODO
+					// TODO: handle the error properly
 					continue consumerMainLoop
 				}
 

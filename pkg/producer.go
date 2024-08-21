@@ -201,5 +201,3 @@ func (p *Producer) Send(topic string, message []byte) error {
 
 	return p.SendMessage(m)
 }
-
-// TODO
