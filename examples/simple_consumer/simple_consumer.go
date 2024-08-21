@@ -25,11 +25,11 @@ func main() {
 	fmt.Println("Reading messages")
 
 	for {
-		topic, message, err := c.Read()
+		topic, messageOffset, message, err := c.Read()
 		if err != nil {
 			panic(err.Error())
 		}
 
-		fmt.Printf("Message received on %s topic with message length of %d\n", topic, len(message))
+		fmt.Printf("Message received on %s topic with message length of %d and offset of %d\n", topic, len(message), messageOffset)
 	}
 }

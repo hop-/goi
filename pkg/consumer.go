@@ -219,12 +219,29 @@ func (c *Consumer) ReadMessage() (*Message, error) {
 	return m, nil
 }
 
-func (c *Consumer) Read() (string, []byte, error) {
+func (c *Consumer) Read() (string, int64, []byte, error) {
 	m, err := c.ReadMessage()
 
-	if m != nil {
-		return m.Topic, m.Content, err
+	if err != nil {
+		return "", -1, nil, err
 	}
 
-	return "", nil, err
+	return m.Topic, *m.Offset, m.Content, nil
+}
+
+func (c *Consumer) Commit(topic string, offset int64) error {
+	if offset < 0 {
+		return fmt.Errorf("offset is negative")
+	}
+
+	// TODO: commit message
+
+	return nil
+}
+
+func (c *Consumer) CommitMessage(m *Message) error {
+	if m.Offset == nil {
+		return fmt.Errorf("message offset is not set")
+	}
+	return c.Commit(m.Topic, *m.Offset)
 }
